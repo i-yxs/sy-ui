@@ -1,0 +1,71 @@
+
+@font-face {
+  font-family: "DIN-Medium";
+  src: url("font/DIN-Medium.otf") format("truetype");
+}
+@font-face {
+  font-family: "DIN-Regular";
+  src: url("font/DIN-Regular.otf") format("truetype");
+}
+.sy-ui-din-medium {
+  font-family: 'DIN-Medium';
+}
+.sy-ui-din-regular {
+  font-family: 'DIN-Regular';
+}
+.input-placeholder{
+  color:#999;
+}
+.sy-ui-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* 图标字体 */
+[class*=" sy-ui-icon-"],
+[class^=sy-ui-icon-] {
+  font-family: "sy-ui-iconfont" !important;
+  font-size: inherit;
+  font-style: inherit;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1em;
+}
+.sy-ui-icon-loading {
+  animation: sy-ui-rotating 2s linear infinite;
+}
+.sy-ui-icon-arrow-left:before {
+  content: "\e64f";
+  display: inline-block;
+  transform: scaleX(-1);
+}
+/*细边框*/
+.sy-ui-border-top,
+.sy-ui-border-bottom,
+.sy-ui-border-left,
+.sy-ui-border-right{position: relative;}
+.sy-ui-border-top:before,
+.sy-ui-border-bottom:after { content: ''; position: absolute; left: 0; right: 0; border-width: 0; z-index: 1; }
+.sy-ui-border-left:before,
+.sy-ui-border-right:after { content: ''; position: absolute; top: 0; bottom: 0; border-width: 0; }
+.sy-ui-border-top:before { top: 0; border-top: solid 1px #eee; transform: scaleY(.5);transform-origin: 0 0; }
+.sy-ui-border-bottom:after { bottom: 0; border-bottom: solid 1px #eee; transform: scaleY(.5);transform-origin: 0 100%;}
+.sy-ui-border-left:before { left: 0; border-left: solid 1px #eee; transform: scaleX(.5);transform-origin: 0 0;}
+.sy-ui-border-right:after { right: 0; border-right: solid 1px #eee; transform: scaleX(.5);transform-origin: 100% 0;}
+
+/*超出省略*/
+.sy-ui-folded { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; word-break:break-all;}
+.sy-ui-folded.f1 { -webkit-line-clamp: 1; }
+.sy-ui-folded.f2 { -webkit-line-clamp: 2; }
+.sy-ui-folded.f3 { -webkit-line-clamp: 3; }
+.sy-ui-folded.f4 { -webkit-line-clamp: 4; }
+.sy-ui-folded.f5 { -webkit-line-clamp: 5; }
+
+@keyframes sy-ui-rotating {
+  0% {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(1turn);
+  }
+}

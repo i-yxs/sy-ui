@@ -1,0 +1,35 @@
+{
+	"pages": [
+		{"path": "pages/index", "style": { "navigationBarTitleText": "SYUI" }},
+		{"path": "pages/sy-input/index","style": { "navigationBarTitleText": "输入框"}},
+		{"path": "pages/sy-radio/index","style": { "navigationBarTitleText": "单选按钮"}},
+		{"path": "pages/sy-checkbox/index","style": { "navigationBarTitleText": "多选框"}},
+		{"path": "pages/sy-upload/index","style": { "navigationBarTitleText": "上传"}},
+		{"path": "pages/sy-button/index","style": { "navigationBarTitleText": "按钮"}},
+		{"path": "pages/sy-form-config/index","style": { "navigationBarTitleText": "表单配置"}},
+		{"path": "pages/sy-map/index","style": { "disableScroll": true,"navigationBarTitleText": "地图"}},
+		{"path": "pages/sy-tree/index","style": { "navigationBarTitleText": "树形控件"}},
+		{"path": "pages/sy-table/index","style": { "navigationBarTitleText": "表格"}},
+		{"path": "pages/sy-steps/index","style": { "navigationBarTitleText": "步骤条"}},
+		{"path": "pages/sy-picker/index","style": { "navigationBarTitleText": "选择器"}},
+		{"path": "pages/sy-circular/index","style": { "navigationBarTitleText": "圆环进度条"}},
+		{"path": "pages/sy-popover/index","style": { "navigationBarTitleText": "弹出框"}},
+		{"path": "pages/sy-calendar/index","style": { "navigationBarTitleText": "日历"}},
+		{"path": "pages/sy-countdown/index","style": { "navigationBarTitleText": "倒计时"}},
+		{"path": "pages/sy-loading/index","style": { "navigationBarTitleText": "加载提示"}},
+		{"path": "pages/sy-action-sheet/index","style": { "navigationBarTitleText": "操作菜单"}}
+	],
+	"globalStyle": {
+		"backgroundColor": "#F9FAFD",
+		"navigationBarTitleText": "",
+		"backgroundColorTop":"#F9FAFD",
+		"navigationBarBackgroundColor": "#0001ae",
+		"navigationBarTextStyle":"white"
+	},
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^sy-(.*)": "@/components/sy-ui/components/sy-$1/sy-$1.vue"
+		}
+	}
+}
