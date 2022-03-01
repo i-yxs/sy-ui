@@ -3,6 +3,7 @@ SYUI
 兼容全端的UI组件库项目
 
 **使用方法**
+
 1、拉取仓库代码到本地<br>
 2、使用命令行运行`npm i`命令安装依赖
 3、使用HBuilder X导入项目（文件-导入-从本地目录导入）<br>
@@ -10,6 +11,7 @@ SYUI
 5、使用HBuilder X发布项目（运行-选择需要发布的平台）<br>
 
 **目录示例**
+
 ```json
 ┌─api                     api接口
 ├─components              组件目录
@@ -44,6 +46,7 @@ SYUI
 
 ```
 **组件列表**
+
 |组件名|组件说明|
 |---|---|
 |xxx|[xxx](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/xxx/README.md)|
