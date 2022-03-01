@@ -17,10 +17,10 @@
                 </view>
             </view>
             <view class="foot-wrap flex">
-                <view v-if="showCancel" class="button" @tap="handleCancel">
+                <view v-if="showCancel" class="button" @click="handleCancel">
                     <sy-button :text="cancelText" plain/>
                 </view>
-                <view class="button" @tap="handleConfirm">
+                <view class="button" @click="handleConfirm">
                     <sy-button :text="confirmText" type="primary"/>
                 </view>
             </view>
@@ -33,8 +33,8 @@
         props: {
             title: String,
             content: String,
-            visible: { type: Boolean, default: false },
-            showCancel: { type: Boolean, default: false },
+            visible: Boolean,
+            showCancel: Boolean,
             cancelText: { type: String, default: '取消' },
             confirmText: { type: String, default: '确定' }
         },
@@ -52,6 +52,7 @@
             },
             // 点击确定按钮时触发
             handleConfirm() {
+                this.$emit('update:visible', false)
                 this.$emit('confirm')
             }
         }

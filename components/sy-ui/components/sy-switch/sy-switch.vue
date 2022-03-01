@@ -7,42 +7,32 @@
         :style="style"
         class="sy-switch"
     >
-        <template v-if="readonly">
+        <template v-if="__props.readonly">
             <text v-if="isEmpty(viewValue)" class="input-placeholder">
-                {{ placeholder }}
+                {{ __props.placeholder }}
             </text>
             <text v-else>{{ viewValue }}</text>
         </template>
-        <switch
-            v-else
-            :color="color"
-            :checked="checked"
-            :disabled="disabled"
-            @change="handleChange"
-        />
+        <template v-else>
+            <switch
+                :color="color"
+                :checked="checked"
+                :disabled="disabled"
+                @change="handleChange"
+            />
+            <text class="label">{{ checked ? trueLabel : falseLabel }}</text>
+        </template>
     </view>
 </template>
 <script>
-    import styleVars from '@/uni.scss'
-    import { jsonToCss } from '@/components/sy-ui/utils'
+    import props from './props'
+    import mixinProps from '../../mixin/props'
+    import { objectToCss } from '../../utils'
 
     export default {
         name: 'SySwitch',
-        props: {
-            value: { default: false },
-            color: { type: String, default: styleVars.APP_COLOR },
-            styles: Object,
-            // 是否只读
-            readonly: { type: Boolean, default: false },
-            disabled: { type: Boolean, default: false },
-            trueValue: { default: true },
-            trueLabel: { type: String, default: '是' },
-            // 没有选中时的值
-            falseValue: { default: false },
-            falseLabel: { type: String, default: '否' },
-            // 没有值时的占位符
-            placeholder: String
-        },
+        mixins: [mixinProps],
+        props,
         data() {
             return {
                 checked: false
@@ -50,24 +40,24 @@
         },
         computed: {
             style() {
-                return jsonToCss(this.styles)
+                return objectToCss(this.__props.styles)
             },
             viewValue() {
-                return this.checked ? this.trueLabel : this.falseLabel
+                return this.checked ? this.__props.trueLabel : this.__props.falseLabel
             }
         },
         watch: {
-            value: {
+            '__props.value': {
                 immediate: true,
                 handler(value) {
-                    this.checked = this.trueValue === value
+                    this.checked = this.__props.trueValue === value
                 }
             }
         },
         methods: {
             handleChange(e) {
                 this.checked = e.detail.value
-                var value = this.checked ? this.trueValue : this.falseValue
+                var value = this.checked ? this.__props.trueValue : this.__props.falseValue
                 this.$emit('input', value)
                 this.$emit('change', value)
             }
@@ -78,6 +68,9 @@
 .sy-switch {
     display: inline-flex;
     align-items: center;
+    switch + .label {
+        margin-left: 10rpx;
+    }
 }
 </style>
 

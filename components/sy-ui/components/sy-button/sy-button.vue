@@ -4,53 +4,54 @@
 !-->
 <template>
     <view
-        :class="[{plain: plain, inline: inline, loading: loading, disabled: disabled}, type]"
-        :style="style"
+        :class="[__props.type, {
+            plain: __props.plain,
+            inline: __props.inline,
+            loading: __props.loading,
+            disabled: __props.disabled
+        }]"
+        :style="styles_"
         class="sy-button"
         @click="$emit('click', $event)"
     >
-        <view v-if="loading" class="button-icon loading-icon sy-ui-icon-loading" />
-        <view v-if="prefixIcon" :class="prefixIcon" class="button-icon prefix-icon" />
+        <view v-if="__props.loading" class="button-icon loading-icon sy-ui-icon-loading" />
+        <view v-if="__props.prefixIcon" :class="__props.prefixIcon" class="button-icon prefix-icon" />
         <slot>
-            <view v-if="text" class="button-text">
-                {{ text }}
+            <view v-if="__props.text" class="button-text">
+                {{ __props.text }}
             </view>
         </slot>
-        <view v-if="suffixIcon" :class="suffixIcon" class="button-icon suffix-icon" />
+        <view v-if="__props.suffixIcon" :class="__props.suffixIcon" class="button-icon suffix-icon" />
+        <button
+            v-if="__props.openType"
+            :loading="__props.loading"
+            :disabled="__props.disabled"
+            :open-type="__props.openType"
+            @click.stop
+            @contact="$emit('contact', $event)"
+            @getUserInfo="$emit('getuserinfo', $event)"
+            @chooseAvatar="$emit('chooseavatar', $event)"
+            @getphonenumber="$emit('getphonenumber', $event)"
+        />
     </view>
 </template>
 <script>
 
-    import { jsonToCss } from '@/components/sy-ui/utils'
-    import defaultValue from '@/components/sy-ui/utils/defaultValue'
+    import props from './props'
+    import mixinProps from '../../mixin/props'
+    import { objectToCss } from '../../utils'
 
     export default {
         name: 'SyButton',
-        props: {
-            // 按钮类型 primary success warning danger
-            type: String,
-            // 是否朴素按钮
-            plain: { type: Boolean, default: false },
-            // 按钮文本
-            text: String,
-            // 是否内联按钮
-            inline: { type: Boolean, default: false },
-            // 是否加载中
-            loading: { type: Boolean, default: false },
-            // 是否禁用
-            disabled: { type: Boolean, default: false },
-            // 头部图标
-            prefixIcon: String,
-            // 尾部图标
-            suffixIcon: String,
-            // 自定义样式
-            styles: Object
-        },
+        mixins: [mixinProps],
+        props,
         computed: {
-            style() {
-                return jsonToCss({
-                    ...defaultValue.button.styles,
-                    ...this.styles
+            styles_() {
+                return objectToCss({
+                    height: '90rpx',
+                    borderRadius: '45rpx',
+                    fontSize: '30rpx',
+                    ...this.__props.styles
                 })
             }
         }
@@ -58,6 +59,7 @@
 </script>
 <style lang="scss" scoped>
 .sy-button{
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -66,16 +68,16 @@
     border: solid 1px $APP_COLOR;
     padding: 0 30rpx;
     box-sizing: border-box;
-    transition: all .2s;
+    transition: background all .2s;
     &:active{
         background: #f9f9f9;
     }
     &.primary{
         color: #fff;
-        background: $APP_COLOR;
+        background: $APP_BACKGROUND;
         border: solid 1px transparent;
         &:active{
-            background: $APP_COLOR_ACTIVE;
+            background: $APP_BACKGROUND_ACTIVE;
         }
     }
     &.success{
@@ -154,6 +156,7 @@
     }
     .button-text{
         font-weight: bold;
+        line-height: 1em;
     }
     .button-icon{
         display: inline-block;
@@ -163,6 +166,14 @@
         & + .suffix-icon {
             margin-right: 16rpx;
         }
+    }
+    button {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
     }
 }
 /* #ifdef MP-WEIXIN */

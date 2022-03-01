@@ -4,7 +4,10 @@
 !-->
 <template>
     <view
-        :class="[`style${styleType}`, {readonly: readonly, disabled: disabled, uploading: uploading}]"
+        :class="[`style${__props.styleType}`, {
+            readonly: __props.readonly,
+            disabled: __props.disabled
+        }]"
         class="upload-card"
     >
         <view v-if="fileData" class="preview" @click="handlePreviewImage">
@@ -12,21 +15,19 @@
         </view>
         <view v-else class="icon sy-ui-icon-camera" @click="handleChooseButton" />
         <view class="text">
-            <template v-if="readonly && !fileList.length">
-                {{ placeholder }}
+            <template v-if="__props.readonly && !fileList.length">
+                {{ __props.placeholder }}
             </template>
             <template v-else>
-                {{ label }}
+                {{ __props.label }}
             </template>
         </view>
-        <view v-if="!readonly" class="button" @click.stop="handleChooseButton">
+        <view v-if="!__props.readonly" class="button" @click.stop="handleChooseButton">
             {{ uploading ? '上传中...' : '更换' }}
         </view>
         <sy-upload
             ref="SyUpload"
-            :config="config"
-            :file-list="fileList"
-            :location-to-before-draw="locationToBeforeDraw"
+            :props="uploadProps"
             hidden
             @drawbefore="$emit('drawbefore', $event)"
             @drawafter="$emit('drawafter', $event)"
@@ -39,31 +40,18 @@
 </template>
 <script>
     // 方法
+    import props from './props'
+    import mixinProps, { assignProps } from '../../mixin/props'
     import {
         previewImgSrc,
         baseImgSrc
-    } from '../sy-upload/config'
+    } from '@/utils'
     // 组件
 
     export default {
         name: 'SyUploadCard',
-        components: {
-        },
-        props: {
-            value: Object,
-            label: String,
-            config: { type: Object, default: () => ({}) },
-            // 是否只读
-            readonly: { type: Boolean, default: false },
-            // 是否禁用
-            disabled: { type: Boolean, default: false },
-            // 样式类型
-            styleType: { type: [String, Number], default: 1 },
-            // 没有值时的占位符
-            placeholder: String,
-            // 是否绘制前获取地理位置
-            locationToBeforeDraw: { type: Boolean, default: false }
-        },
+        mixins: [mixinProps],
+        props,
         data() {
             return {
                 fileData: null,
@@ -78,7 +66,7 @@
                 return []
             },
             previewPath() {
-                const data = this.fileData
+                let data = this.fileData
                 if (data) {
                     if (data.previewPath) {
                         return data.previewPath
@@ -89,15 +77,21 @@
                 return ''
             },
             originalPath() {
-                const data = this.fileData
+                let data = this.fileData
                 if (data) {
                     return baseImgSrc + data.fileId
                 }
                 return ''
+            },
+            uploadProps() {
+                return assignProps('SyUpload', {
+                    ...this.__props,
+                    fileList: this.fileList
+                })
             }
         },
         watch: {
-            value: {
+            '__props.value': {
                 deep: true,
                 immediate: true,
                 handler(value) {
@@ -137,12 +131,12 @@
             },
             // 点击更换按钮时触发
             handleChooseButton() {
-                if (!this.readonly) {
-                    this.$refs.SyUpload.handleChooseButton()
-                }
+                if (this.uploading || this.__props.readonly || this.__props.disabled) return
+                this.$refs.SyUpload.handleChooseButton()
             },
             // 图片预览
             handlePreviewImage() {
+                if (this.uploading || this.__props.disabled) return
                 uni.previewImage({
                     current: this.originalPath,
                     urls: [this.originalPath]
@@ -181,7 +175,7 @@
             width: 120rpx;
             height: 120rpx;
             line-height: 120rpx;
-            background: $APP_COLOR;
+            background: $APP_BACKGROUND;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -231,7 +225,7 @@
             bottom: 0;
             right: 0;
             height: 52rpx;
-            background: $APP_COLOR;
+            background: $APP_BACKGROUND;
             text-align: center;
             line-height: 52rpx;
             color: #fff;
@@ -247,10 +241,6 @@
                 border-radius: 40rpx;
             }
         }
-    }
-    &.disabled,
-    &.uploading {
-        pointer-events: none;
     }
     &.disabled {
         view {

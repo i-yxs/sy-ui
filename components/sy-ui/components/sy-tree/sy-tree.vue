@@ -4,10 +4,9 @@
 !-->
 <template>
     <view :class="{'sy-ui-border-bottom': showBottomLineBetween}" class="sy-tree">
-        <block v-for="index in nodeList" :key="index">
+        <block v-for="path in nodeList" :key="path">
             <tree-node
-                ref="TreeNode"
-                @ready="handleNodeReady(index)"
+                :path="path"
             />
         </block>
         <view v-if="!nodeList.length" class="empty-text">
@@ -16,85 +15,65 @@
     </view>
 </template>
 <script>
+    // 工具
+    import store from '@/store'
     import Tree from './Tree'
-    import publicProps from './publicProps'
+    import props from './props'
+    import { getProperty } from '../../utils'
+    import mixinProps from '../../mixin/props'
+    import mixinProvide from '../../mixin/provideComponent'
     // 组件
     import TreeNode from './tree-node'
-    // 常量
-    const watch = {}
-    Object.keys(publicProps).forEach(key => {
-        watch[key] = function() {
-            this.updateNodeProps()
-        }
-    })
+
     export default {
         name: 'SyTree',
         components: {
             TreeNode
         },
-        props: {
-            // 最大显示层级
-            deep: { type: [Number, String], default: 999 },
-            // 源数据
-            options: { type: [Array, String] },
-            // 指定label为数据源的某个属性
-            labelKey: { type: String, default: 'label' },
-            // 指定value为数据源的某个属性
-            valueKey: { type: String, default: 'value' },
-            // 指定子节点为数据源的某个属性
-            childrenKey: { type: String, default: 'children' },
-            // 是否每次只能展开一个同级树节点
-            accordion: { type: Boolean, default: false },
-            // 内容为空的时候展示的文本
-            emptyText: { type: String, default: '没有数据' },
-            // 是否默认展开所有节点
-            defaultExpandAll: { type: Boolean, default: false },
-            // 展开子节点的时候是否自动展开父节点，数据量较大时谨慎开启
-            autoExpandParent: { type: Boolean, default: false },
-            // 默认选中的节点的 value 的数组
-            defaultSelectedValues: { type: Array, default: () => [] },
-            // 默认展开的节点的 value 的数组
-            defaultExpandedValues: { type: Array, default: () => [] },
-            // 公共节点属性
-            ...publicProps
-        },
+        mixins: [mixinProps, mixinProvide],
+        props,
         data() {
             return {
                 // 节点列表
                 nodeList: []
             }
         },
+        provide() {
+            return {
+                provideComponent: this
+            }
+        },
         computed: {
+            options_() {
+                let options = this.isEmpty(this.provideData) ? this.__props.options : this.provideData
+                if (typeof options === 'string') {
+                    options = getProperty(store.state.baseData, options)
+                }
+                options = Array.isArray(options) ? options : []
+                return options
+            },
             showBottomLineBetween() {
                 return this.showLineBetween && this.nodeList.length
             }
         },
         watch: {
-            options: {
-                deep: true,
-                handler() {
-                    this.setOptions()
-                }
-            },
-            deep() { this.setOptions() },
-            labelKey() { this.setOptions() },
-            valueKey() { this.setOptions() },
-            childrenKey() { this.setOptions() },
-            defaultExpandAll(value) {
-                if (value) {
-                    this.expandAllNode()
-                }
-            },
-            ...watch
+            options_: 'updateOptions'
         },
         mounted() {
-            // 节点属性
-            this.nodeProps = {}
-            // 初始化源数据
-            if (this.options) {
-                this.setOptions()
-            }
-            // 组件准备就绪事件
+            // watch
+            [
+                'deep',
+                'labelKey',
+                'valueKey',
+                'childrenKey'
+            ].forEach(key => {
+                this.$watch('__props.' + key, this.updateOptions)
+            })
+            // 实例化Tree类
+            this.$tree = new Tree({
+                $vue: this
+            })
+            this.updateOptions()
             this.$emit('ready')
         },
         methods: {
@@ -102,36 +81,30 @@
             filter(method) {
                 this.$tree.filter(method)
             },
-            // 设置基础数据
-            setOptions(data = this.options || []) {
-                if (typeof data === 'string') {
-                    try {
-                        data = JSON.parse(data) || []
-                    } catch (err) {
-                        data = []
-                    }
-                }
-                this.$tree = new Tree(data, {
-                    deep: this.deep,
-                    labelKey: this.labelKey,
-                    valueKey: this.valueKey,
-                    childrenKey: this.childrenKey,
-                    $root: this
-                })
-                this.nodeList = this.$tree.children.map((v, index) => index)
-                this.updateNodeProps()
+            // 更新数据源
+            updateOptions() {
+                this.$tree.deep = this.__props.deep
+                this.$tree.labelKey = this.__props.labelKey
+                this.$tree.valueKey = this.__props.valueKey
+                this.$tree.childrenKey = this.__props.childrenKey
+                this.$tree.setData(this.options_)
+                this.nodeList = this.$tree.children.map(node => node.path)
                 // 是否默认展开全部节点
-                if (this.defaultExpandAll) {
+                if (this.__props.defaultExpandAll) {
                     this.setExpandedAll(true)
                 } else {
                     // 默认展开指定节点
-                    this.defaultExpandedValues.forEach(key => {
-                        this.setExpandedKey(key)
-                    })
+                    if (Array.isArray(this.__props.defaultExpandedValues)) {
+                        this.__props.defaultExpandedValues.forEach(key => {
+                            this.setExpandedKey(key)
+                        })
+                    }
                     // 默认选中指定节点
-                    this.defaultSelectedValues.forEach(key => {
-                        this.setSelectedKey(key)
-                    })
+                    if (Array.isArray(this.__props.defaultSelectedValues)) {
+                        this.__props.defaultSelectedValues.forEach(key => {
+                            this.setSelectedKey(key)
+                        })
+                    }
                 }
             },
             // 选中指定key的节点
@@ -146,26 +119,9 @@
             setExpandedAll(value) {
                 this.$tree.setExpandedAll(value)
             },
-            // 更新节点属性
-            updateNodeProps() {
-                Object.keys(publicProps).forEach(key => {
-                    this.nodeProps[key] = this[key]
-                })
-                this.$tree.children.forEach(item => {
-                    if (item.$node) {
-                        item.$node.updateNodeProps(this.nodeProps)
-                    }
-                })
-            },
-            // 节点准备就绪
-            handleNodeReady(index) {
-                let $node = this.$refs.TreeNode[index]
-                let treeNode = this.$tree.children[index]
-                treeNode.setProps({
-                    $node
-                })
-                $node.initNodeData(treeNode)
-                $node.updateNodeProps(this.nodeProps)
+            // 获取被选中的节点所组成的数组
+            getCheckedNodes() {
+                return this.$tree.selected.map(path => this.$tree.findToPath(path))
             }
         }
     }

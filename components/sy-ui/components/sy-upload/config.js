@@ -1,21 +1,25 @@
 
+import { getToken } from '@/utils/storage'
+import { uploadFileUrl, previewImgSrc, baseDownSrc } from '@/utils'
+
 export default {
     name: 'file',
     fileIdKey: 'fileId',
-    action: '上传url',
-    originalUrl: '下载源文件url',
-    thumbnailUrl: '下载预览文件url',
+    quality: 0.6,
+    fileType: 'jpg',
+    action: uploadFileUrl,
+    originalUrl: baseDownSrc,
+    thumbnailUrl: previewImgSrc,
     headers: {
-        token: 'token'
+        token: (getToken() || {}).access_token
     },
     fixResponse: function(response) {
-        switch (response.code) {
-        case 200:
-            return response.data
-        default:
+        if (response.success) {
+            return response.data[0]
+        } else {
             uni.showToast({
                 icon: 'none',
-                title: response.msg || '网络错误！',
+                title: response.message || '网络错误！',
                 duration: 2000
             })
             return

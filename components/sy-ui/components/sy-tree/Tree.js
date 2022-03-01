@@ -2,9 +2,9 @@
 import TreeNode from './TreeNode'
 // 树形控件类
 class Tree {
-    constructor(data = [], props) {
+    constructor(props) {
         this.deep = 999 // 最大显示层级
-        this.data = data
+        this.data = []
         this.allNode = [] // 所有节点列表
         this.selected = [] // 选中的节点路径列表
         this.children = [] // 子节点数据
@@ -13,20 +13,20 @@ class Tree {
         this.valueKey = 'value' // 指定value为数据源的某个属性
         this.childrenKey = 'children' // 指定子节点为数据源的某个属性
 
-        this.$root = null // SyTree组件的VUE实例
+        this.$vue = null // SyTree组件的VUE实例
 
         this.setProps(props)
-        this.setData(data)
     }
     // 设置数据
     setData(data) {
         if (Array.isArray(data)) {
             // 递归生成节点数据
-            var recursion = (data, parentNode, path, deep) => {
+            let recursion = (data, parentNode, path, deep) => {
                 if (data && data.length && deep <= this.deep) {
                     return data.map((item, index) => {
-                        var node = new TreeNode({
+                        let node = new TreeNode({
                             path: path + index,
+                            data: item,
                             level: deep,
                             label: item[this.labelKey],
                             value: item[this.valueKey],
@@ -34,9 +34,7 @@ class Tree {
                         })
                         node.children = recursion(item[this.childrenKey], node, node.path + '.', deep + 1)
                         node.childrenCount = node.children ? node.children.length : 0
-                        node.$data = item
-                        node.$root = this.$root
-                        node.$rootNode = this
+                        node.$tree = this
                         this.allNode.push(node)
                         return node
                     })
@@ -45,6 +43,8 @@ class Tree {
                     this.leafNode.push(parentNode)
                 }
             }
+            this.allNode = []
+            this.leafNode = []
             this.children = recursion(data, null, '', 1) || []
         }
     }
@@ -68,8 +68,8 @@ class Tree {
                         if (node.children && node.children.filter(v => v.visible).length) {
                             node.setVisible(true, false)
                         } else {
-                            node.setVisible(!!method(node.$data), false)
-                            if (node.visible && this.$root.autoExpandParent) {
+                            node.setVisible(!!method(node.data), false)
+                            if (node.visible && this.$vue.autoExpandParent) {
                                 node.parentNode.setExpandedBubble(true)
                             }
                         }
@@ -79,6 +79,12 @@ class Tree {
                 }
             }
             recursion(this.leafNode)
+
+            this.leafNode.map(node => {
+                if (node.visible && node.parentNode) {
+                    node.parentNode.updateSelected()
+                }
+            })
         }
     }
     // 选中指定key的节点

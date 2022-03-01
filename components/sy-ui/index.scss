@@ -34,11 +34,6 @@
 .sy-ui-icon-loading {
   animation: sy-ui-rotating 2s linear infinite;
 }
-.sy-ui-icon-arrow-left:before {
-  content: "\e64f";
-  display: inline-block;
-  transform: scaleX(-1);
-}
 /*细边框*/
 .sy-ui-border-top,
 .sy-ui-border-bottom,

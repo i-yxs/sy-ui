@@ -5,64 +5,47 @@
 <template>
     <view class="sy-picker-tree">
         <sy-picker-input
-            :value="viewValue"
-            :height="height"
-            :hidden="hidden"
-            :overlay="overlay"
-            :loading="loading"
-            :prefix-icon="prefixIcon"
-            :suffix-icon="suffixIconName"
-            :disabled="disabled"
-            :clearable="clearable"
-            :placeholder="placeholder"
-            :input-props="inputProps"
-            readonly
+            :props="pickerInputProps"
             @clear="handleClear"
-            @click="visibles.popover = true"
+            @click="show"
         />
         <sy-popover
-            :visible="visibles.popover"
+            v-model="popover.content"
+            :visible="popover.visible"
             position="bottom"
-            @update="visibles.picker = $event"
-            @masktap="visibles.popover = false"
+            @masktap="handleCancel"
         >
-            <view v-if="visibles.picker" class="popover-wrap">
+            <view v-if="popover.content" class="popover-wrap">
                 <view class="head-wrap">
-                    {{ title || '请选择' }}
-                </view>
-                <view class="filter-wrap">
-                    <view class="main-wrap">
-                        <sy-input
-                            v-model="keyword"
-                            :height="height"
-                            clearable
-                            placeholder="输入关键词搜索"
-                            prefix-icon="sy-ui-icon-search"
-                            confirm-type="search"
-                            @clear="handleTreeFilter"
-                            @confirm="handleTreeFilter"
-                        />
+                    <view class="title-wrap">{{ __props.title || '请选择' }}</view>
+                    <view class="filter-wrap">
+                        <view class="search-wrap">
+                            <sy-input
+                                v-model="keyword"
+                                clearable
+                                placeholder="输入关键词搜索"
+                                prefix-icon="sy-ui-icon-search"
+                                confirm-type="search"
+                                @clear="handleTreeFilter"
+                                @confirm="handleTreeFilter"
+                            />
+                        </view>
+                        <view v-if="__props.multiple" class="selected-all" @click="handleSelectedAll">
+                            <text class="text">全选</text>
+                            <sy-checkbox
+                                :value="selectedAll"
+                                :indeterminate="indeterminate"
+                                size="30rpx"
+                            />
+                        </view>
                     </view>
-                    <view v-if="showLineBetween" class="block"/>
                 </view>
+                <view v-if="__props.showLineBetween" class="line-between"/>
                 <view class="body-wrap">
                     <sy-tree
                         ref="Tree"
-                        :deep="deep"
-                        :label-key="labelKey"
-                        :value-key="valueKey"
-                        :children-key="childrenKey"
-                        :multiple="multiple"
-                        :accordion="accordion"
-                        :node-height="nodeHeight"
-                        :enable-animate="enableAnimate"
-                        :check-strictly="checkStrictly"
-                        :show-node-count="showNodeCount"
-                        :show-line-between="showLineBetween"
-                        :default-expand-all="defaultExpandAll"
-                        selectable
-                        empty-text="没有找到数据"
-                        @ready="handleTreeReady"
+                        :props="treeProps"
+                        provide-key="options_"
                         @check-change="handleCheckChange"
                     />
                 </view>
@@ -76,204 +59,243 @@
                         @confirm="handleConfirm"
                     />
                 </view>
-                <sy-loading :value="filtering" text="加载中..." />
+                <sy-safe-area-inset />
+                <sy-loading
+                    :value="filtering"
+                    :styles="{
+                        borderRadius: '30rpx 30rpx 0 0'
+                    }"
+                    text="加载中"
+                />
             </view>
         </sy-popover>
     </view>
 </template>
 <script>
     // 方法
+    import store from '@/store'
     import Tree from '../sy-tree/Tree'
-    import publicProps from '@/components/sy-ui/utils/publicProps'
+    import props from './props'
+    import { getProperty } from '../../utils'
+    import mixinProps, { assignProps } from '../../mixin/props'
+    import mixinProvide from '../../mixin/provideComponent'
 
     export default {
         name: 'SyPickerTree',
-        props: {
-            title: String, // 弹出框标题文本
-            value: { type: null, default: '' },
-            emitPath: { type: Boolean, default: false }, // 节点选中状态改变时，是否返回由该节点所在的各级菜单的值所组成的数组，默认只返回该节点的值
-            separator: { type: String, default: '/' }, // 输入框中有多个值时的间隔符
-            // tree 参数
-            deep: { default: 999 },
-            options: null,
-            labelKey: { default: 'label' },
-            valueKey: { default: 'value' },
-            multiple: { default: false },
-            accordion: { default: false },
-            emptyText: { default: '没有数据' },
-            nodeHeight: { default: '90rpx' },
-            childrenKey: { default: 'children' },
-            enableAnimate: { default: true },
-            checkStrictly: { default: false },
-            showNodeCount: { default: false },
-            showLineBetween: { default: true },
-            defaultExpandAll: { default: false },
-            autoExpandParent: { default: false },
-            // 是否必需选中一项
-            required: { type: Boolean, default: false },
-            ...publicProps.pickerInput
-        },
+        mixins: [mixinProps, mixinProvide],
+        props,
         data() {
             return {
-                visibles: {
-                    picker: false,
-                    popover: false
+                popover: {
+                    content: false,
+                    visible: false
                 },
                 keyword: '', // 筛选关键词
                 selected: [], // 选中的节点key
                 viewValue: '', // 输入框显示的值
                 emitValue: '', // 返回的值
-                filtering: false
+                filtering: false,
+                selectedAll: false,
+                indeterminate: false,
+                selectedValues: []
+            }
+        },
+        provide() {
+            return {
+                provideComponent: this
             }
         },
         computed: {
-            suffixIconName() {
-                if (!this.readonly && !this.disabled) {
-                    return this.loading ? 'sy-ui-icon-loading' : this.suffixIcon
+            options_() {
+                let options = this.isEmpty(this.provideData) ? this.__props.options : this.provideData
+                if (typeof options === 'string') {
+                    options = getProperty(store.state.baseData, options)
                 }
-                return ''
+                options = Array.isArray(options) ? options : []
+                if (this.__props.emptyOption) {
+                    return [
+                        {
+                            [this.__props.labelKey]: this.__props.emptyOption,
+                            [this.__props.valueKey]: null
+                        },
+                        ...options
+                    ]
+                }
+                return options
+            },
+            treeProps() {
+                return assignProps('SyTree', {
+                    ...this.__props,
+                    selectable: true,
+                    defaultSelectedValues: this.selectedValues,
+                    defaultExpandedValues: this.selectedValues
+                })
+            },
+            pickerInputProps() {
+                return assignProps('SyPickerInput', {
+                    ...this.__props,
+                    value: this.viewValue
+                })
             }
         },
         watch: {
-            options: {
-                deep: true,
-                handler(data) {
-                    this.setOptions(data)
-                }
-            },
-            deep() { this.setOptions() },
-            value() { this.updateViewData() },
-            labelKey() { this.setOptions() },
-            valueKey() { this.setOptions() },
-            childrenKey() { this.setOptions() }
+            options_() {
+                this.updateOptions()
+            }
         },
         mounted() {
+            // watch
+            [
+                'deep',
+                'labelKey',
+                'valueKey',
+                'provideData',
+                'childrenKey',
+                'emptyOption'
+            ].forEach(key => {
+                this.$watch('__props.' + key, this.updateOptions)
+            })
+            ;[
+                'value',
+                'multiple',
+                'showAllLevels'
+            ].forEach(key => {
+                this.$watch('__props.' + key, this.updateViewData)
+            })
+            // 实例化Tree类
+            this.$tree = new Tree({
+                $vue: this
+            })
+            this.updateOptions()
             // 当前选中的节点列表
-            this.selectNode = []
-            // 初始化源数据
-            this.setOptions(this.options)
+            this.selectedNodes = []
         },
         methods: {
             show() {
-                if (!this.readonly && !this.disabled) {
-                    this.visibles.popover = true
-                }
+                if (this.__props.readonly || this.__props.loading || this.__props.disabled) return
+                this.popover.visible = true
             },
             hide() {
-                this.visibles.popover = false
+                this.keyword = ''
+                this.popover.visible = false
             },
-            // 设置基础数据
-            setOptions(data = []) {
-                if (typeof data === 'string') {
-                    try {
-                        data = JSON.parse(data) || []
-                    } catch (err) {
-                        data = []
-                    }
-                }
-                this.$tree = new Tree(data, {
-                    deep: this.deep,
-                    labelKey: this.labelKey,
-                    valueKey: this.valueKey,
-                    childrenKey: this.childrenKey,
-                    $root: this
-                })
-                if (this.$Tree) {
-                    this.$Tree.setOptions(data)
-                }
+            // 更新数据源
+            updateOptions() {
+                this.$tree.deep = this.__props.deep
+                this.$tree.labelKey = this.__props.labelKey
+                this.$tree.valueKey = this.__props.valueKey
+                this.$tree.childrenKey = this.__props.childrenKey
+                this.$tree.setData(this.options_)
                 // 更新视图value
                 this.updateViewData()
             },
             // 获取value
             getEmitValue() {
-                var value = ''
-                if (this.multiple) {
-                    if (this.emitPath) {
-                        value = this.selectNode.map(node => node.getParentNodeAll().map(node => node.value))
+                let value = ''
+                if (this.__props.multiple) {
+                    if (this.__props.emitPath) {
+                        value = this.selectedNodes.map(node => node.getParentNodeAll().map(node => node.value))
                     } else {
-                        value = this.selectNode.map(node => node.value)
+                        value = this.selectedNodes.map(node => node.value)
                     }
-                } else if (this.selectNode.length) {
-                    if (this.emitPath) {
-                        value = this.selectNode[0].getParentNodeAll().map(node => node.value)
+                } else if (this.selectedNodes.length) {
+                    if (this.__props.emitPath) {
+                        value = this.selectedNodes[0].getParentNodeAll().map(node => node.value)
                     } else {
-                        value = this.selectNode[0].value
+                        value = this.selectedNodes[0].value
                     }
                 }
                 return value
             },
             // 根据value更新视图数据
             updateViewData() {
-                var value = this.value
-                var isArray = Array.isArray(value)
-                if (this.multiple) {
+                let value = this.__props.value
+                if (this.__props.multiple) {
                     // 多选，value应为数组
-                    if (isArray) {
-                        if (this.emitPath) {
+                    if (Array.isArray(value)) {
+                        if (this.__props.emitPath) {
                             value = value.filter(v => Array.isArray(v))
                             // emitPath为ture时，value的每一项也应为数组
                             this.selected = value.map(v => v.slice(-1))
-                            this.viewValue = value.map(item => {
-                                item = item.map(key => this.$tree.findToKey(key))
-                                if (item.filter(node => node)) {
-                                    return item.map(node => node.label).join(this.separator)
-                                }
-                            }).filter(item => item).join(',')
+                            if (this.__props.showAllLevels) {
+                                this.viewValue = value.map(item => {
+                                    return item.map(v => this.$tree.findToKey(v)).filter(v => v).map(v => v.label).join(this.__props.separator)
+                                }).filter(v => v).join(',')
+                            } else {
+                                this.viewValue = this.selected.map(item => this.$tree.findToKey(item)).filter(v => v).map(v => v.label).join(',')
+                            }
                         } else {
                             this.selected = [...value]
-                            this.viewValue = value.map(key => this.$tree.findToKey(key)).filter(node => node).map(node => node.label).join(this.separator)
+                            let nodes = value.map(key => this.$tree.findToKey(key)).filter(node => node)
+                            if (this.__props.showAllLevels) {
+                                this.viewValue = nodes.map(node => node.getParentNodeAll().map(node => node.label).join(this.separator)).join(',')
+                            } else {
+                                this.viewValue = nodes.map(node => node.label).join(this.__props.separator)
+                            }
                         }
                     } else {
                         this.selected = []
                         this.viewValue = ''
                     }
+                    this.selectedValues = this.__props.value || []
+                    this.updateSelectedAll()
                 } else {
                     // 单选
-                    if (this.emitPath) {
+                    if (this.__props.emitPath) {
                         // emitPath为ture时，value应为数组
-                        if (isArray) {
+                        if (Array.isArray(value)) {
                             this.selected = value.slice(-1)
-                            this.viewValue = value.map(key => this.$tree.findToKey(key)).filter(node => node).map(node => node.label).join(this.separator)
+                            if (this.__props.showAllLevels) {
+                                this.viewValue = value.map(key => this.$tree.findToKey(key)).filter(node => node).map(node => node.label).join(this.__props.separator)
+                            } else {
+                                this.viewValue = (this.$tree.findToKey(this.selected[0]) || {}).label
+                            }
                         } else {
                             this.selected = []
                             this.viewValue = ''
                         }
+                        this.selectedValues = this.__props.value
                     } else {
                         this.selected = [value]
-                        this.viewValue = (this.$tree.findToKey(value) || {}).label
+                        if (this.__props.showAllLevels) {
+                            let node = this.$tree.findToKey(value)
+                            this.viewValue = node ? node.getParentNodeAll().map(node => node.label).join(this.__props.separator) : ''
+                        } else {
+                            this.viewValue = (this.$tree.findToKey(value) || {}).label
+                        }
+                        this.selectedValues = [this.__props.value]
                     }
                 }
-                if (this.$Tree) {
-                    this.handleTreeReady(this.$Tree)
-                }
-                this.selectNode = this.selected.map(key => this.$tree.findToKey(key)).filter(node => node)
+                this.selectedNodes = this.selected.map(key => this.$tree.findToKey(key)).filter(node => node)
             },
-            // tree组件准备就绪时触发
-            handleTreeReady() {
-                this.$Tree = this.$refs.Tree
-                if (this.$Tree) {
-                    this.$Tree.setOptions(this.$tree.data)
-                    this.selected.forEach(key => {
-                        this.$Tree.setSelectedKey(key)
-                        this.$Tree.setExpandedKey(key)
-                    })
-                }
+            // 更新全选状态
+            updateSelectedAll() {
+                let nodes = this.__props.emitPath ? this.$tree.allNode : this.$tree.leafNode
+                this.selectedAll = nodes.findIndex(node => {
+                    return this.selectedValues.indexOf(node.value) === -1
+                }) === -1
+                this.indeterminate = !this.selectedAll && this.selectedValues.length > 0
             },
             // 根据关键词筛选节点
             handleTreeFilter() {
-                if (this.$Tree) {
-                    this.filtering = true
-                    this.$nextTick(() => {
-                        this.$Tree.filter((data) => {
-                            return data[this.labelKey].indexOf(this.keyword) > -1
-                        })
-                        this.filtering = false
+                this.filtering = true
+                this.$nextTick(() => {
+                    this.$refs.Tree.filter((data) => {
+                        return data[this.__props.labelKey].indexOf(this.keyword) > -1
                     })
-                }
+                    this.filtering = false
+                    this.handleCheckChange()
+                })
             },
             // tree组件节点选中状态发生变化时触发
-            handleCheckChange(data) {
-                this.selectNode = data.selected
+            handleCheckChange() {
+                let refTree = this.$refs.Tree
+                let nodes = this.__props.emitPath ? refTree.$tree.allNode : refTree.$tree.leafNode
+                nodes = nodes.filter(node => node.visible)
+                this.selectedNodes = refTree.getCheckedNodes()
+                this.selectedValues = this.selectedNodes.map(v => v.value)
+                this.selectedAll = nodes.findIndex(node => this.selectedValues.indexOf(node.value) === -1) === -1
+                this.indeterminate = !this.selectedAll && nodes.findIndex(node => this.selectedValues.includes(node.value)) > -1
             },
             // 点击清空按钮时触发
             handleClear() {
@@ -283,22 +305,35 @@
             },
             // 点击取消按钮时触发
             handleCancel() {
-                this.selectNode = []
-                this.visibles.popover = false
+                this.hide()
+                this.updateViewData()
                 this.$emit('cancel')
             },
             // 点击确定按钮时触发
             handleConfirm() {
-                if (this.required && !this.selectNode.length) {
-                    return this.showToast('请至少选择一项')
+                if (this.__props.required && !this.selectedNodes.length) {
+                    return this.showToast('请至少选择一项！')
                 }
                 let value = this.getEmitValue()
-                this.visibles.popover = false
+                this.hide()
                 this.$emit('input', value)
                 this.$emit('change', {
                     value,
-                    node: this.selectNode
+                    nodes: this.selectedNodes
                 })
+            },
+            // 点击全选按钮时触发
+            handleSelectedAll() {
+                let Tree = this.$refs.Tree
+                if (Tree) {
+                    let value = !this.selectedAll
+                    Tree.$tree.leafNode.forEach(node => {
+                        if (node.visible) {
+                            node.setSelected(value)
+                        }
+                    })
+                    this.handleCheckChange()
+                }
             }
         }
     }
@@ -311,25 +346,41 @@
     height: 90vh;
     color: #333;
     background: #fff;
+    border-radius: 30rpx 30rpx 0 0;
     .head-wrap{
-        color: #333;
-        line-height: 48rpx;
-        text-align: center;
-        font-weight: bold;
-        font-size: 34rpx;
-        padding: 24rpx;
+        .title-wrap {
+            color: #333;
+            line-height: 48rpx;
+            text-align: center;
+            font-weight: bold;
+            font-size: 34rpx;
+            padding: 24rpx;
+        }
+        .filter-wrap{
+            display: flex;
+            align-items: center;
+            padding: 0 30rpx 10rpx;
+            .search-wrap {
+                flex: 1;
+                padding: 0 30rpx;
+                text-align: left;
+                background: #F8F8F8;
+                border-radius: 35rpx;
+            }
+            .selected-all {
+                display: flex;
+                align-items: center;
+                margin-left: 30rpx;
+                .text{
+                    color: $APP_COLOR;
+                    font-size: 24rpx;
+                    margin-right: 10rpx;
+                }
+            }
+        }
     }
-    .filter-wrap{
-        text-align: left;
-        padding: 0 30rpx 10rpx;
-        .main-wrap {
-            padding: 0 30rpx;
-            background: #F8F8F8;
-            border-radius: 35rpx;
-        }
-        .block {
-            height: 10rpx;
-        }
+    .line-between {
+        height: 10rpx;
     }
     .body-wrap{
         flex:1;

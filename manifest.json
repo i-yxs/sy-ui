@@ -1,5 +1,5 @@
 {
-    "name" : "test",
+    "name" : "环卫运营管理",
     "appid" : "",
     "description" : "",
     "versionName" : "1.0.0",
@@ -50,11 +50,17 @@
     "quickapp" : {},
     /* 小程序特有相关 */
     "mp-weixin" : {
-        "appid" : "",
+        "appid" : "wxa50856344e095333",
         "setting" : {
             "urlCheck" : false
         },
-        "usingComponents" : true
+        "usingComponents" : true,
+        "permission" : {
+            "scope.userLocation" : {
+                "desc" : "你的位置信息将用于就近匹配资源"
+            }
+        },
+        "requiredBackgroundModes" : [ "location" ]
     },
     "mp-alipay" : {
         "usingComponents" : true
@@ -67,6 +73,5 @@
     },
     "uniStatistics" : {
         "enable" : false
-    },
-    "vueVersion" : "2"
+    }
 }

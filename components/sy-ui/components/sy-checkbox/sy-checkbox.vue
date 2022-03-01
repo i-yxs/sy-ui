@@ -5,20 +5,30 @@
 <template>
     <view class="sy-checkbox">
         <view
-            :class="{button: button, checked: checked, readonly: readonly, disabled: disabled}"
-            :style="{lineHeight: size}"
+            :class="{
+                button: __props.button,
+                checked: checked,
+                readonly: __props.readonly,
+                disabled: __props.disabled
+            }"
+            :style="{lineHeight: __props.size}"
             class="checkbox-wrap"
             @click="handleActive"
         >
             <view
-                v-if="!button"
+                v-if="!__props.button"
                 :class="iconName"
-                :style="{width: size, height: size, color: color, fontSize: size}"
+                :style="{
+                    width: __props.size,
+                    height: __props.size,
+                    color: __props.color,
+                    fontSize: __props.size
+                }"
                 class="icon"
             />
             <slot>
-                <text v-if="text" class="text">
-                    {{ text }}
+                <text v-if="__props.text" class="text">
+                    {{ __props.text }}
                 </text>
             </slot>
         </view>
@@ -26,25 +36,13 @@
 </template>
 <script>
 
-    import defaultValue from '@/components/sy-ui/utils/defaultValue'
+    import props from './props'
+    import mixinProps from '../../mixin/props'
 
     export default {
         name: 'SyCheckbox',
-        props: {
-            text: String,
-            size: { type: String, default: defaultValue.checkbox.size },
-            color: { type: String, default: defaultValue.checkbox.color },
-            value: { default: false },
-            button: { type: Boolean, default: false },
-            // 是否只读
-            readonly: { type: Boolean, default: false },
-            disabled: { type: Boolean, default: false },
-            indeterminate: { type: Boolean, default: false },
-            // 选中时的值
-            trueLabel: { default: true },
-            // 没有选中时的值
-            falseLabel: { default: false }
-        },
+        mixins: [mixinProps],
+        props,
         data() {
             return {
                 checked: false
@@ -52,7 +50,7 @@
         },
         computed: {
             iconName() {
-                if (this.indeterminate) {
+                if (this.__props.indeterminate) {
                     return 'sy-ui-icon-multiple-indeterminate'
                 } else {
                     return this.checked ? 'sy-ui-icon-multiple-fill' : 'sy-ui-icon-multiple'
@@ -60,16 +58,17 @@
             }
         },
         watch: {
-            value: {
+            '__props.value': {
                 immediate: true,
                 handler(value) {
-                    this.checked = this.trueLabel === value
+                    this.checked = this.__props.trueLabel === value
                 }
             }
         },
         methods: {
             handleActive() {
-                var value = this.value === this.trueLabel ? this.falseLabel : this.trueLabel
+                if (this.__props.readonly) return
+                let value = this.__props.value === this.__props.trueLabel ? this.__props.falseLabel : this.__props.trueLabel
                 this.$emit('input', value)
                 this.$emit('change', value)
             }
@@ -77,7 +76,6 @@
     }
 </script>
 <style lang="scss" scoped>
-
 .sy-checkbox{
     display: inline-flex;
     .checkbox-wrap {
@@ -103,7 +101,7 @@
             transition: .2s ease-in-out;
             &.checked {
                 color: #fff;
-                background: $APP_COLOR;
+                background: $APP_BACKGROUND;
             }
             .icon{
                 display: none;
@@ -111,9 +109,6 @@
             .text {
                 margin-left: 0;
             }
-        }
-        &.readonly {
-            pointer-events: none;
         }
         &.disabled{
             pointer-events: none;

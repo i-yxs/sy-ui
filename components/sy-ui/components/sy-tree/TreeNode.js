@@ -2,6 +2,7 @@
 class TreeNode {
     constructor(props) {
         this.path = '' // 节点的路径
+        this.data = null // 节点所对应的数据
         this.level = 0 // 节点的级别
         this.label = '' // 节点的标签
         this.value = '' // 节点的值
@@ -14,11 +15,8 @@ class TreeNode {
         this.childrenCount = 0 // 子孙节点的总数
         this.indeterminate = false // 子孙节点是否只选中部分
 
-        this.$data = null // 节点所对应的数据
-        this.$node = null // 节点的VUE实例
-        this.$root = null // SyTree组件的VUE实例
-        this.$rootNode = null // 根节点的VUE实例
-        this.$parentNode = null // 父节点的VUE实例
+        this.$vue = null // 节点的VUE实例
+        this.$tree = null // Tree实例
 
         this.setProps(props)
     }
@@ -40,8 +38,8 @@ class TreeNode {
             this.childrenCount = 0
         }
         // 更新实例属性
-        if (this.$node) {
-            this.$node.setProps({
+        if (this.$vue) {
+            this.$vue.setProps({
                 visible: this.visible,
                 childrenCount: this.childrenCount
             })
@@ -61,7 +59,7 @@ class TreeNode {
         }
     }
     // 设置展开状态
-    setExpanded(value = this.expanded, isBubbleUpdate = true, accordion = this.$root.accordion) {
+    setExpanded(value = this.expanded, isBubbleUpdate = true, accordion = this.$tree.$vue.__props.accordion) {
         this.expanded = !!value
         // 更新展开数量
         if (this.expanded && this.children) {
@@ -74,7 +72,7 @@ class TreeNode {
         if (accordion) {
             // 展开状态为ture，关闭同级别的其他展开的节点
             if ((this.expanded && this.parentNode) || this.level === 1) {
-                (this.parentNode || this.$rootNode).children.forEach(node => {
+                (this.parentNode || this.$tree).children.forEach(node => {
                     if (node !== this && node.expanded) {
                         node.setExpanded(false, true, false)
                     }
@@ -82,16 +80,16 @@ class TreeNode {
             }
         }
         // 更新实例属性
-        if (this.$node) {
-            this.$node.setProps({
+        if (this.$vue) {
+            this.$vue.setProps({
                 expanded: this.expanded,
                 expandedCount: this.expandedCount
             })
-            this.$node.updateExpanded()
+            this.$vue.updateExpanded()
         }
         // 更新父节点数据
         if (isBubbleUpdate && this.parentNode) {
-            if (this.$root.autoExpandParent && this.expanded) {
+            if (this.$tree.$vue.__props.autoExpandParent && this.expanded) {
                 this.setExpandedBubble(value)
             } else {
                 this.parentNode.setExpanded(this.parentNode.expanded, true, accordion)
@@ -109,17 +107,17 @@ class TreeNode {
     setSelected(value = this.selected, isBubbleUpdate = true) {
         value = !!value
         // 获取组件配置
-        if (this.$root.multiple) {
+        if (this.$tree.$vue.__props.multiple) {
             // 多选
             this.selected = value
             this.indeterminate = false
-            if (this.$root.checkStrictly) {
+            if (this.$tree.$vue.__props.checkStrictly) {
                 if (this.selected) {
-                    if (this.$rootNode.selected.indexOf(this.path) === -1) {
-                        this.$rootNode.selected.push(this.path)
+                    if (this.$tree.selected.indexOf(this.path) === -1) {
+                        this.$tree.selected.push(this.path)
                     }
                 } else {
-                    this.$rootNode.selected.splice(this.$rootNode.selected.indexOf(this.path), 1)
+                    this.$tree.selected.splice(this.$tree.selected.indexOf(this.path), 1)
                 }
             } else {
                 // checkStrictly为false时，节点和叶子节点是不同的处理
@@ -131,11 +129,11 @@ class TreeNode {
                 } else {
                     // 叶子节点改变选中状态时，需要通知所有父节点更新状态
                     if (this.selected) {
-                        if (this.$rootNode.selected.indexOf(this.path) === -1) {
-                            this.$rootNode.selected.push(this.path)
+                        if (this.$tree.selected.indexOf(this.path) === -1) {
+                            this.$tree.selected.push(this.path)
                         }
                     } else {
-                        this.$rootNode.selected.splice(this.$rootNode.selected.indexOf(this.path), 1)
+                        this.$tree.selected.splice(this.$tree.selected.indexOf(this.path), 1)
                     }
                     // 更新父节点选中状态
                     if (isBubbleUpdate && this.parentNode) {
@@ -145,22 +143,22 @@ class TreeNode {
             }
         } else {
             // 单选时，只有checkStrictly为ture，或没有子节点时才能改变选中状态
-            if (this.$root.checkStrictly || !this.children) {
+            if (this.$tree.$vue.__props.checkStrictly || !this.children) {
                 this.selected = value
                 // 如果是选中状态，则取消已选中的节点
                 if (this.selected) {
-                    this.$rootNode.selected.forEach(path => {
+                    this.$tree.selected.forEach(path => {
                         if (this.path !== path) {
-                            this.$rootNode.findToPath(path).setSelected(false)
+                            this.$tree.findToPath(path).setSelected(false)
                         }
                     })
-                    this.$rootNode.selected = [this.path]
+                    this.$tree.selected = [this.path]
                 }
             }
         }
         // 更新实例属性
-        if (this.$node) {
-            this.$node.setProps({
+        if (this.$vue) {
+            this.$vue.setProps({
                 selected: this.selected,
                 indeterminate: this.indeterminate
             })
@@ -169,12 +167,13 @@ class TreeNode {
     // 更新选中状态
     updateSelected(isBubbleUpdate = true) {
         // 多选且checkStrictly为false时，根据子节点选中状态更新选中状态
-        if (this.$root.multiple && !this.$root.checkStrictly && this.children) {
-            this.selected = this.children.findIndex(node => !node.selected) === -1
-            this.indeterminate = !this.selected && this.children.findIndex(node => node.selected || node.indeterminate) > -1
+        if (this.$tree.$vue.__props.multiple && !this.$tree.$vue.__props.checkStrictly && this.children) {
+            let children = this.children.filter(node => node.visible)
+            this.selected = children.findIndex(node => !node.selected) === -1
+            this.indeterminate = !this.selected && children.findIndex(node => node.selected || node.indeterminate) > -1
             // 更新实例属性
-            if (this.$node) {
-                this.$node.setProps({
+            if (this.$vue) {
+                this.$vue.setProps({
                     selected: this.selected,
                     indeterminate: this.indeterminate
                 })
@@ -188,7 +187,7 @@ class TreeNode {
     // 获取节点的所有父元素及当前节点的列表
     getParentNodeAll() {
         var list = []
-        var node = this.$rootNode
+        var node = this.$tree
         this.path.split('.').forEach(index => {
             node = node.children[index]
             list.push(node)

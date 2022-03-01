@@ -50,7 +50,7 @@
             // 结束角度
             endAngle: { type: Number },
             // 镜像角度
-            mirror: { type: Boolean, default: false }
+            mirror: Boolean
         },
         data() {
             return {

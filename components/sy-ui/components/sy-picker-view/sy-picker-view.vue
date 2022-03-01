@@ -4,45 +4,38 @@
 !-->
 <template>
     <picker-view
-        :style="{height: height}"
+        :style="{height: __props.height}"
         :value="pickerValue"
-        :indicator-style="indicatorStyle"
+        :indicator-style="__props.indicatorStyle"
         class="sy-picker-view"
         @change="handleChange"
     >
-        <picker-view-column v-for="(column, index) in columnList" :key="index" @change="handleChange">
+        <picker-view-column
+            v-for="(column, index) in columnList"
+            :key="index"
+            @change="handleChange"
+        >
             <view v-for="(item, idx) in column" :key="idx" class="item">
                 <view class="sy-ui-folded f1">
-                    {{ item[labelKey] }}
+                    {{ item[__props.labelKey] }}
                 </view>
             </view>
         </picker-view-column>
     </picker-view>
 </template>
 <script>
-    // 方法
-    import { numberPad } from '@/components/sy-ui/utils'
-    import dateTools from '@/components/sy-ui/utils/dateTools'
+
+    import store from '@/store'
+    import props from './props'
+    import { numberPad, getProperty } from '../../utils'
+    import mixinProps from '../../mixin/props'
+    import mixinProvide from '../../mixin/provideComponent'
+    import dateTools from '../../utils/dateTools'
 
     export default {
         name: 'SyPickerView',
-        props: {
-            mode: { type: String, default: 'selector' }, // 选择器的模式 selector、multiSelector、time、date、linkage
-            value: null,
-            height: { type: String, default: '200rpx' }, // 选择器的高度
-            options: null, // 数据源
-            labelKey: { type: String, default: 'label' }, // 指定选择器的标签为数据源的某个属性
-            valueKey: { type: String, default: 'value' }, // 指定选择器的值为数据源的某个属性
-            // time、date选择器属性
-            min: String, // 可选的最晚时间
-            max: String, // 可选的最早时间
-            format: { type: String, default: '' }, // 日期格式YYYY-MM-DD 时间格式hh(HH):mm:ss
-            indicatorStyle: { type: String, default: 'height:44px;' }, // 选中框的样式
-            // linkage选择器参数
-            deep: { type: [Number, String], default: 999 }, // 最大节点深度
-            emitPath: { type: Boolean, default: false }, // 在选中节点改变时，是否返回由该节点所在的各级菜单的值所组成的数组，若设置 false，则只返回该节点的值
-            childrenKey: { type: String, default: 'children' } // 指定节点子节点列表为节点对象的某个属性值
-        },
+        mixins: [mixinProps, mixinProvide],
+        props,
         data() {
             return {
                 // 列数据
@@ -52,21 +45,27 @@
             }
         },
         computed: {
+            options_() {
+                let options = this.isEmpty(this.provideData) ? this.__props.options : this.provideData
+                if (typeof options === 'string') {
+                    options = getProperty(store.state.baseData, options)
+                }
+                options = Array.isArray(options) ? options : []
+                return options
+            }
         },
         watch: {
-            value() {
+            '__props.value'() {
                 this.updateValueToIndex()
             },
-            options: {
-                deep: true,
-                handler() {
+            '__props.deep'() {
+                if (['linkage'].includes(this.__props.mode)) {
                     this.updateColumn()
                 }
             },
-            deep() {
-                if (['linkage'].includes(this.mode)) {
-                    this.updateColumn()
-                }
+            options_() {
+                this.updateColumn()
+                this.updateValueToIndex()
             }
         },
         mounted() {
@@ -79,16 +78,10 @@
                 return year % 400 === 0 || (year % 100 !== 0 && year % 4 === 0)
             },
             // 设置选项数据
-            setOptions(options = this.options) {
-                if (typeof options === 'string') {
-                    try {
-                        options = JSON.parse(options) || []
-                    } catch (err) {
-                        options = []
-                        console.error(err)
-                    }
-                }
-                switch (this.mode) {
+            updateOptions() {
+                let options = this.options_
+                if (!Array.isArray(options)) return
+                switch (this.__props.mode) {
                 case 'selector':
                     this.columnList = [options]
                     break
@@ -101,16 +94,16 @@
                     if (Array.isArray(options) && options.length) {
                         let maxDeep = 0
                         let recursion = (data, parentNode, path, deep) => {
-                            if (data.length && deep <= this.deep) {
+                            if (data.length && deep <= this.__props.deep) {
                                 maxDeep = Math.max(maxDeep, deep)
                                 return data.filter(item => item).map((item, index) => {
                                     let nowPath = `${path}${index}`
-                                    let children = item[this.childrenKey] || []
+                                    let children = item[this.__props.childrenKey] || []
                                     let node = {
                                         data: item,
                                         path: nowPath,
-                                        label: item[this.labelKey],
-                                        value: item[this.valueKey]
+                                        label: item[this.__props.labelKey],
+                                        value: item[this.__props.valueKey]
                                     }
                                     node.children = recursion(children, node, `${nowPath}.`, deep + 1)
                                     return node
@@ -120,19 +113,19 @@
                             }
                         }
                         this.nodesData = recursion(options, null, '', 1)
-                        this.maxDeep = Math.min(maxDeep, this.deep)
+                        this.maxDeep = Math.min(maxDeep, this.__props.deep)
                         this.updateLinkageColumn()
                     }
                     break
                 }
             },
             // 根据value获取选择器下标
-            getIndex(value = this.value) {
+            getIndex(value = this.__props.value) {
                 var indexs = []
                 var values = []
                 var date = new Date()
                 if (this.columnList.length) {
-                    switch (this.mode) {
+                    switch (this.__props.mode) {
                     case 'selector':
                         values = [value]
                         break
@@ -140,7 +133,7 @@
                         values = value || []
                         break
                     case 'linkage':
-                        if (this.emitPath) {
+                        if (this.__props.emitPath) {
                             values = value || []
                         } else {
                             var path = (this.rootNodes.find(item => item.value === value) || this.rootNodes[0]).path
@@ -166,7 +159,7 @@
                         values = [date.getHours(), date.getMinutes(), date.getSeconds()]
                         break
                     }
-                    indexs = this.columnList.map((item, index) => item.findIndex(v => v[this.valueKey] === values[index])).map(index => index > -1 ? index : 0)
+                    indexs = this.columnList.map((item, index) => item.findIndex(v => v[this.__props.valueKey] === values[index])).map(index => index > -1 ? index : 0)
                 }
                 return indexs
             },
@@ -176,15 +169,15 @@
                 this.columnList.map((item, index) => {
                     item = item[indexs[index] || 0]
                     if (item) {
-                        value.push(item[this.valueKey])
+                        value.push(item[this.__props.valueKey])
                     }
                 })
-                switch (this.mode) {
+                switch (this.__props.mode) {
                 case 'selector':
                     value = value[0]
                     break
                 case 'linkage':
-                    value = this.emitPath ? value : value.slice(-1)[0]
+                    value = this.__props.emitPath ? value : value.slice(-1)[0]
                     break
                 case 'date':
                     value = value.map(v => numberPad(v)).join('-')
@@ -198,7 +191,7 @@
             // 获取日期数据
             getDateColumn() {
                 var column = []
-                var fields = (this.format || 'YYYY-MM-DD').split('-')
+                var fields = (this.__props.format || 'YYYY-MM-DD').split('-')
                 // 根据格式设置选择器的粒度
                 if (fields[0] === 'YYYY') {
                     // 年份
@@ -207,8 +200,8 @@
                     var year = (new Date()).getFullYear() + 100
                     for (var i = year - 200; i < year; i++) {
                         column[0].push({
-                            [this.labelKey]: i + '年',
-                            [this.valueKey]: i
+                            [this.__props.labelKey]: i + '年',
+                            [this.__props.valueKey]: i
                         })
                     }
                     if (fields[1]) {
@@ -216,8 +209,8 @@
                         column[1] = []
                         for (i = 1; i <= 12; i++) {
                             column[1].push({
-                                [this.labelKey]: numberPad(i) + '月',
-                                [this.valueKey]: i
+                                [this.__props.labelKey]: numberPad(i) + '月',
+                                [this.__props.valueKey]: i
                             })
                         }
                         if (fields[2]) {
@@ -232,23 +225,23 @@
             // 获取时间数据
             getTimeColumn() {
                 var column = []
-                var fields = (this.format || 'HH:mm:ss').split(':')
+                var fields = (this.__props.format || 'HH:mm:ss').split(':')
                 // 根据格式设置选择器的粒度
                 // 判断是12小时制还是24小时制
                 if (/^H+$/.test(fields[0])) {
                     column[0] = []
                     for (let i = 0; i < 24; i++) {
                         column[0][i] = {
-                            [this.labelKey]: numberPad(i) + '时',
-                            [this.valueKey]: i
+                            [this.__props.labelKey]: numberPad(i) + '时',
+                            [this.__props.valueKey]: i
                         }
                     }
                 } else if (/^h+$/.test(fields[0])) {
                     column[0] = []
                     for (let i = 0; i < 12; i++) {
                         column[0][i] = {
-                            [this.labelKey]: numberPad(i + 1) + '时',
-                            [this.valueKey]: i + 1
+                            [this.__props.labelKey]: numberPad(i + 1) + '时',
+                            [this.__props.valueKey]: i + 1
                         }
                     }
                 }
@@ -257,8 +250,8 @@
                     column[1] = []
                     for (let i = 0; i < 60; i++) {
                         column[1][i] = {
-                            [this.labelKey]: numberPad(i) + '分',
-                            [this.valueKey]: i
+                            [this.__props.labelKey]: numberPad(i) + '分',
+                            [this.__props.valueKey]: i
                         }
                     }
                     if (fields[2] === 'ss') {
@@ -266,8 +259,8 @@
                         column[2] = []
                         for (let i = 0; i < 60; i++) {
                             column[2][i] = {
-                                [this.labelKey]: numberPad(i) + '秒',
-                                [this.valueKey]: i
+                                [this.__props.labelKey]: numberPad(i) + '秒',
+                                [this.__props.valueKey]: i
                             }
                         }
                     }
@@ -276,11 +269,11 @@
             },
             // 更新列数据
             updateColumn() {
-                switch (this.mode) {
+                switch (this.__props.mode) {
                 case 'linkage':
                 case 'selector':
                 case 'multiSelector':
-                    this.setOptions()
+                    this.updateOptions()
                     break
                 case 'time':
                     this.getTimeColumn()
@@ -293,16 +286,16 @@
             },
             // 更新日期列数据
             updateDateColumn() {
-                var format = this.format || 'YYYY-MM-DD'
+                var format = this.__props.format || 'YYYY-MM-DD'
                 if (format === 'YYYY-MM-DD' && this.columnList.length) {
-                    var year = this.pickerValue[0] ? this.columnList[0][this.pickerValue[0]][this.valueKey] : (new Date()).getFullYear()
+                    var year = this.pickerValue[0] ? this.columnList[0][this.pickerValue[0]][this.__props.valueKey] : (new Date()).getFullYear()
                     var month = this.pickerValue[1] || 0
                     var date = [31, this.isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month]
                     var column = []
                     for (var i = 1; i <= date; i++) {
                         column.push({
-                            [this.labelKey]: numberPad(i) + '日',
-                            [this.valueKey]: i
+                            [this.__props.labelKey]: numberPad(i) + '日',
+                            [this.__props.valueKey]: i
                         })
                     }
                     this.columnList = [
@@ -317,10 +310,10 @@
                 if (this.rootNodes && this.rootNodes.length) {
                     if (!indexs) {
                         var value
-                        if (this.emitPath) {
-                            value = Array.isArray(this.value) ? this.value.slice(-1)[0] : ''
+                        if (this.__props.emitPath) {
+                            value = Array.isArray(this.__props.value) ? this.__props.value.slice(-1)[0] : ''
                         } else {
-                            value = this.value
+                            value = this.__props.value
                         }
                         var path = (this.rootNodes.find(item => item.value === value) || this.rootNodes[0]).path
                         indexs = path.split('.').map(index => Number(index))
@@ -341,8 +334,8 @@
                     this.columnList = data.map(column => {
                         return column.map(item => {
                             return {
-                                [this.labelKey]: item.label,
-                                [this.valueKey]: item.value
+                                [this.__props.labelKey]: item.label,
+                                [this.__props.valueKey]: item.value
                             }
                         })
                     })
@@ -350,7 +343,7 @@
             },
             // 根据value更新index
             updateValueToIndex() {
-                switch (this.mode) {
+                switch (this.__props.mode) {
                 case 'date':
                     this.updateDateColumn()
                     break
@@ -364,7 +357,7 @@
             // 根据index更新value
             updateIndexToValue() {
                 if (this.columnList.length) {
-                    switch (this.mode) {
+                    switch (this.__props.mode) {
                     case 'date':
                         this.updateDateColumn()
                         break
@@ -387,19 +380,19 @@
                     column // 改变的列下标
                 })
                 this.pickerValue = res.detail.value.map((item) => Math.max(item || 0, 0))
-                if (['date', 'time'].includes(this.mode)) {
+                if (['date', 'time'].includes(this.__props.mode)) {
                     // 根据开始时间和结束时间修正选中的值
                     this.$nextTick(() => {
-                        if (this.min) {
-                            let sdate = dateTools.parse(this.min)
+                        if (this.__props.min) {
+                            let sdate = dateTools.parse(this.__props.min)
                             if (dateTools.parse(this.getValue()) < sdate) {
-                                this.pickerValue = this.getIndex(this.min)
+                                this.pickerValue = this.getIndex(this.__props.min)
                             }
                         }
-                        if (this.max) {
-                            let edate = dateTools.parse(this.max)
+                        if (this.__props.max) {
+                            let edate = dateTools.parse(this.__props.max)
                             if (dateTools.parse(this.getValue()) > edate) {
-                                this.pickerValue = this.getIndex(this.max)
+                                this.pickerValue = this.getIndex(this.__props.max)
                             }
                         }
                         this.updateIndexToValue()
@@ -414,7 +407,7 @@
             handleEmitChange() {
                 var value = this.getValue()
                 var index = this.getIndex()
-                if (this.mode === 'selector') {
+                if (this.__props.mode === 'selector') {
                     index = index[0]
                 }
                 this.$emit('input', value)

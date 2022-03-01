@@ -4,7 +4,7 @@
 !-->
 <template>
     <view :style="{height: height}" class="sy-map">
-        <view class="head">
+        <view :style="headStryles_" class="head">
             <slot name="head" />
         </view>
         <view
@@ -40,7 +40,7 @@
                 :enable-building="mapProps.enableBuilding"
                 :enable-satellite="mapProps.enableSatellite"
                 :enable-overlooking="mapProps.enableOverlooking"
-                @tap="$emit('maptap', $event)"
+                @click="$emit('maptap', $event)"
                 @poitap="$emit('poitap', $event)"
                 @updated="$emit('updated', $event)"
                 @labeltap="$emit('labeltap', $event)"
@@ -55,13 +55,13 @@
             />
             <slot/>
         </view>
-        <view class="foot">
+        <view :style="footStryles_" class="foot">
             <slot name="foot" />
         </view>
     </view>
 </template>
 <script>
-    import { getElementRect, getDirtyNumber } from '@/components/sy-ui/utils'
+    import { objectToCss, getElementRect, getDirtyNumber, promiseTimeOut } from '../../utils'
     // 组件
     import Control from './control'
 
@@ -75,6 +75,10 @@
             scale: { type: Number, default: 17 },
             // 组件高度
             height: { default: '100%' },
+            // hand容器自定义样式
+            headStryles: Object,
+            // foot容器自定义样式
+            footStryles: Object,
             // 控件配置
             control: Object,
             // 默认坐标
@@ -90,7 +94,7 @@
         },
         data() {
             return {
-                id: 'sy-map' + Math.random(),
+                id: `sy-map${Date.now()}`,
                 // 地图样式
                 mapStyle: {},
                 /**
@@ -98,7 +102,6 @@
                  * 推荐使用ref获取组件实例，调用setMapProps方法进行设置
                  */
                 mapProps: {
-                    id: `sy-map${Math.random()}`,
                     scale: this.scale,
                     minScale: 3,
                     maxScale: 20,
@@ -114,6 +117,14 @@
                     enableZoom: true, // 是否支持缩放
                     enableScroll: true // 是否支持拖动
                 }
+            }
+        },
+        computed: {
+            headStryles_() {
+                return objectToCss(this.headStryles)
+            },
+            footStryles_() {
+                return objectToCss(this.footStryles)
             }
         },
         watch: {
@@ -246,11 +257,10 @@
             },
             // 移除 marker
             removeMarker(markerIds) {
-                if (Array.isArray(markerIds)) {
-                    this.mapContext.removeMarkers({ markerIds })
-                    this.contextMarkers = this.contextMarkers.filter(item => markerIds.indexOf(item.id) === -1)
-                    this.mapProps.markers = this.mapProps.markers.filter(item => markerIds.indexOf(item.id) === -1)
-                }
+                markerIds = Array.isArray(markerIds) ? markerIds : [markerIds]
+                this.mapContext.removeMarkers({ markerIds })
+                this.contextMarkers = this.contextMarkers.filter(item => markerIds.indexOf(item.id) === -1)
+                this.mapProps.markers = this.mapProps.markers.filter(item => markerIds.indexOf(item.id) === -1)
             },
             // 设置地图属性
             setMapProps(props) {
@@ -258,7 +268,7 @@
             },
             // 获取用户当前坐标
             getLocation() {
-                return new Promise((resolve, reject) => {
+                return promiseTimeOut(new Promise((resolve, reject) => {
                     uni.getLocation({
                         type: 'gcj02',
                         success: resolve,
@@ -271,7 +281,11 @@
                             })
                         }
                     })
-                })
+                }), process.env.NODE_ENV === 'development' ? 2000 : 10000)
+            },
+            // 根据markerId获取marker
+            getMarker(markerId) {
+                return this.mapProps.markers.find(item => item.id === markerId) || this.contextMarkers.find(item => item.id === markerId)
             },
             // 获取中心坐标和缩放大小
             getCenterAndScale() {
@@ -353,7 +367,7 @@
             // 视图移动到指定marker的位置
             moveToMarker(markerId) {
                 this.$nextTick(() => {
-                    let marker = this.mapProps.markers.find(item => item.id === markerId) || this.contextMarkers.find(item => item.id === markerId)
+                    let marker = this.getMarker(markerId)
                     if (marker) {
                         this.setCenterAndScale({
                             latitude: marker.latitude,
@@ -406,7 +420,7 @@
                         this.setCenterAndScale({
                             latitude: center.latitude,
                             longitude: center.longitude,
-                            scale: Math.min(Math.round(scale) - 1, this.mapProps.minScale)
+                            scale: Math.max(Math.round(scale) - 1, this.mapProps.minScale)
                         })
                     })
                     break

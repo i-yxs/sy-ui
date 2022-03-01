@@ -23,7 +23,7 @@
                         :class="button._class"
                         :style="button._style"
                         class="button sy-ui-border-bottom"
-                        @tap="handleControlTab(button)"
+                        @click="handleControlTab(button)"
                     />
                 </template>
                 <template v-else>
@@ -31,7 +31,7 @@
                         :class="control._class"
                         :style="control._style"
                         class="button"
-                        @tap="handleControlTab(control)"
+                        @click="handleControlTab(control)"
                     />
                 </template>
             </view>
@@ -40,7 +40,7 @@
 </template>
 <script>
     // 工具
-    import { jsonToCss } from '@/components/sy-ui/utils'
+    import { objectToCss } from '../../utils'
 
     import defaultControl from './defaultControl'
 
@@ -63,10 +63,10 @@
             }
         },
         mounted() {
-            this.$watch('options', this.setOptions, {
+            this.$watch('options', this.updateOptions, {
                 deep: true
             })
-            this.setOptions()
+            this.updateOptions()
         },
         methods: {
             /**
@@ -79,7 +79,7 @@
              *      padding: Object,
              * }
              */
-            setOptions(options = this.options) {
+            updateOptions(options = this.options) {
                 options = options || {}
                 let positions = ['left-top', 'left-bottom', 'right-top', 'right-bottom'].map(name => {
                     return {
@@ -126,25 +126,25 @@
                     positions.forEach(position => {
                         switch (position.name) {
                         case 'left-top':
-                            position.style = jsonToCss({
+                            position.style = objectToCss({
                                 left: padding.left + 'rpx',
                                 top: padding.top + 'rpx'
                             })
                             break
                         case 'left-bottom':
-                            position.style = jsonToCss({
+                            position.style = objectToCss({
                                 left: padding.left + 'rpx',
                                 bottom: padding.bottom + 'rpx'
                             })
                             break
                         case 'right-top':
-                            position.style = jsonToCss({
+                            position.style = objectToCss({
                                 right: padding.right + 'rpx',
                                 top: padding.top + 'rpx'
                             })
                             break
                         case 'right-bottom':
-                            position.style = jsonToCss({
+                            position.style = objectToCss({
                                 right: padding.right + 'rpx',
                                 bottom: padding.bottom + 'rpx'
                             })
@@ -166,7 +166,7 @@
                 if (!this.isEmpty(control.activeColor)) {
                     style.color = control.active ? control.activeColor : style.color
                 }
-                control._style = jsonToCss(style)
+                control._style = objectToCss(style)
             },
             // 点击控件时触发
             handleControlTab(control) {

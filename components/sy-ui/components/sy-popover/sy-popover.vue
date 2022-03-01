@@ -4,66 +4,63 @@
 !-->
 <template>
     <view
-        v-if="isVisible"
-        :data-show="visible ? 1 : 0"
-        :style="{
-            top: fixTop,
-            left: left,
-            right: right,
-            bottom: bottom,
-            zIndex: zIndex
-        }"
+        v-if="!destroy"
+        :style="styles_"
+        :data-status="visible ? 'show' : 'hide'"
         class="sy-popover"
     >
         <view :style="{background: maskColor}" class="mask-wrap" @click="$emit('masktap')" />
         <view
             :class="position"
-            :style="bodyStyle"
+            :style="_bodyStyles"
             class="mask-body"
+            @animationend="handleAnimationend"
         >
             <slot/>
         </view>
     </view>
 </template>
 <script>
-    import { isAndroid, isDevtools, jsonToCss } from '@/components/sy-ui/utils'
+    import { objectToCss } from '../../utils'
 
     export default {
         name: 'SyPopover',
-        components: {},
         props: {
-            top: String,
-            left: String,
-            right: String,
-            bottom: String,
-            zIndex: { default: '99' },
-            // 内容容器样式
-            styles: Object,
-            // 可见状态
-            visible: { type: Boolean, default: false },
-            // 蒙层颜色
-            maskColor: { type: String, default: 'rgba(0,0,0,.6)' },
-            // 显示方位
-            position: { type: String, default: 'top' }
+            value: Boolean, // 组件销毁状态
+            visible: Boolean, // 可见状态
+            styles: Object, // 自定义样式
+            bodyStyles: Object, // 内容容器样式
+            position: { type: String, default: 'top' }, // 显示方位
+            maskColor: { type: String, default: 'rgba(0,0,0,.6)' } // 蒙层颜色
         },
         data() {
             return {
-                isVisible: false,
+                destroy: true,
                 animationTimer: null
             }
         },
         computed: {
-            fixTop() {
+            styles_() {
+                let styles = {
+                    zIndex: '99',
+                    ...this.styles
+                }
                 // #ifdef H5
-                return `calc(${this.top || '0px'} + var(--window-top))`
+                styles.top = `calc(${styles.top || '0px'} + var(--window-top))`
                 // #endif
-                return this.top
+                // #ifndef H5
+                styles.top = styles.top
+                // #endif
+                return objectToCss(styles)
             },
-            bodyStyle() {
-                return jsonToCss(this.styles)
+            _bodyStyles() {
+                return objectToCss(this.bodyStyles)
             }
         },
         watch: {
+            value() {
+                this.destroy = !this.value
+            },
             visible() {
                 this.updateVisible()
             }
@@ -76,50 +73,58 @@
         methods: {
             updateVisible() {
                 if (this.visible) {
-                    this.isVisible = true
-                    this.$emit('update', this.isVisible)
-                } else {
-                    clearTimeout(this.animationTimer)
-                    this.animationTimer = setTimeout(() => {
-                        this.isVisible = false
-                        this.$emit('update', this.isVisible)
-                    }, 200)
+                    this.$emit('input', true)
                 }
-                setTimeout(() => {
-                    this.updateNativeVisible()
-                })
+                this.destroy = false
+                this.$nextTick(this.updateNativeVisible)
             },
-            // 更新SyTextarea组件的显示状态
-            // 因为textarea在部分安卓手机上无法同屏渲染，层级高于view，所以需要在SyPopover组件显示状态改变时同时改变SyTextarea组件的显示状态
+            /**
+             * 更新原生组件的显示状态
+             * 因为部分原生组件无法同屏渲染or事件会穿透普通元素，所以这里我们在SyPopover组件显示状态改变时同时改变部分原生组件的显示状态
+             */
             updateNativeVisible() {
-                if (isAndroid || isDevtools) {
-                    var components = this.getComponents()
-                    if (this.visible) {
-                        // 当SyPopover组件显示时，隐藏第一个父SyPopover组件下的所有SyTextarea组件
-                        components.forEach(item => {
-                            item.visible = false
-                        })
-                    } else {
-                        // 当SyPopover组件隐藏时，显示第一个父SyPopover组件下的所有SyTextarea组件
-                        components.forEach(item => {
-                            item.visible = true
+                let components = this.getComponents(['SyInput', 'SyTextarea'])
+                if (this.visible) {
+                    // 当SyPopover组件显示时，隐藏第一个父SyPopover组件下的所有指定组件
+                    components.forEach(item => {
+                        if (item.popoverHiddenAfterDisplay) item.visible = false
+                    })
+                } else {
+                    // 当SyPopover组件隐藏时，显示第一个父SyPopover组件下的所有指定组件
+                    components.forEach(item => {
+                        item.visible = true
+                    })
+                }
+            },
+            // 获取该组件下的所有指定子组件
+            getChildren(name = []) {
+                let list = []
+                let recursion = (children) => {
+                    if (children && children.length) {
+                        children.forEach(node => {
+                            if (name.includes(node.$options.name)) {
+                                list.push(node)
+                            }
+                            recursion(node.$children)
                         })
                     }
                 }
+                recursion(this.$children)
+                return list
             },
-            // 获取当前组件的第一个父SyPopover组件下的所有SyTextarea组件
-            getComponents() {
-                var root = this
+            // 获取该组件第一个父SyPopover组件下的所有指定组件
+            getComponents(name = []) {
+                let root = this
                 while (root.$parent) {
                     root = root.$parent
                     if (['SyPopover'].includes(root.$options.name)) {
                         break
                     }
                 }
-                var list = []
-                var recursion = (node) => {
+                let list = []
+                let recursion = (node) => {
                     if (node !== this) {
-                        if (['SyTextarea'].includes(node.$options.name)) {
+                        if (name.includes(node.$options.name)) {
                             list.push(node)
                         }
                         if (node.$children && node.$children.length) {
@@ -131,6 +136,13 @@
                 }
                 recursion(root)
                 return list
+            },
+            // 动画播放结束时触发
+            handleAnimationend() {
+                if (!this.visible) {
+                    this.destroy = true
+                    this.$emit('input', false)
+                }
             }
         }
     }
@@ -183,7 +195,7 @@
             left: 50%;
         }
     }
-    &[data-show='1'] {
+    &[data-status=show] {
         .mask-wrap {
             animation: fade-in .2s ease-in-out both;
         }
@@ -205,7 +217,7 @@
             }
         }
     }
-    &[data-show='0'] {
+    &[data-status=hide] {
         .mask-wrap {
             animation: fade-out .2s ease-in-out both;
         }

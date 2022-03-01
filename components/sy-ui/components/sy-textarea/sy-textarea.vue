@@ -5,79 +5,58 @@
 <template>
     <view
         :style="style"
-        :class="{disabled: disabled, readonly: readonly}"
+        :class="{disabled: __props.disabled}"
         class="sy-textarea"
     >
         <view class="input-wrap">
-            <view v-if="readonly" class="input-text">
-                <text v-if="isEmpty(inputValue)" class="input-placeholder">
-                    {{ placeholder }}
-                </text>
-                <text v-else>
-                    {{ viewValue }}
-                </text>
+            <view v-if="__props.readonly || !__props.allowInput" class="input-text">
+                <text v-if="isEmpty(inputValue)" class="input-placeholder">{{ __props.placeholder }}</text>
+                <text v-else>{{ viewValue }}</text>
             </view>
-            <view
-                v-else
-                :style="{height: height}"
-                class="textarea"
-            >
-                <textarea
-                    :style="{height: height, display: visible ? 'block' : 'none'}"
-                    :value="viewValue"
-                    :focus="focus"
-                    :fixed="fixed"
-                    :disabled="disabled"
-                    :maxlength="maxlength"
-                    :autoHeight="autoHeight"
-                    :placeholder="placeholder"
-                    :confirm-type="confirmType"
-                    :cursor="nativeProps.cursor"
-                    :confirm-hold="nativeProps.confirmHold"
-                    :holdKeyboard="nativeProps.holdKeyboard"
-                    :cursorSpacing="nativeProps.cursorSpacing"
-                    :selectionEnd="nativeProps.selectionEnd"
-                    :selectionStart="nativeProps.selectionStart"
-                    :showConfirmBar="nativeProps.showConfirmBar"
-                    :adjustPosition="nativeProps.adjustPosition"
-                    disableDefaultPadding
-                    placeholderClass="input-placeholder"
-                    @blur="handleBlur"
-                    @focus="handleFocus"
-                    @input="handleInput"
-                    @confirm="$emit('confirm', $event)"
-                    @linechange="$emit('linechange', $event)"
-                    @keyboardheightchange="$emit('keyboardheightchange', $event)"
-                />
-            </view>
+            <textarea
+                v-else-if="visible"
+                :style="{height: __props.height}"
+                :value="viewValue"
+                :focus="__props.focus"
+                :fixed="__props.fixed"
+                :cursor="__props.cursor"
+                :disabled="__props.disabled"
+                :maxlength="__props.maxlength"
+                :autoHeight="__props.autoHeight"
+                :confirmType="__props.confirmType"
+                :confirmHold="__props.confirmHold"
+                :placeholder="__props.placeholder"
+                :holdKeyboard="__props.holdKeyboard"
+                :cursorSpacing="__props.cursorSpacing"
+                :selectionEnd="__props.selectionEnd"
+                :selectionStart="__props.selectionStart"
+                :showConfirmBar="__props.showConfirmBar"
+                :adjustPosition="__props.adjustPosition"
+                disableDefaultPadding
+                placeholderClass="input-placeholder"
+                @blur="handleBlur"
+                @focus="handleFocus"
+                @input="handleInput"
+                @confirm="$emit('confirm', $event)"
+                @linechange="$emit('linechange', $event)"
+                @keyboardheightchange="$emit('keyboardheightchange', $event)"
+            />
+            <view v-else :style="{height: __props.height}"/>
         </view>
-        <view v-if="showWordLimit && maxlength" class="word-number">
-            {{ valueLength + '/' + maxlength }}
+        <view v-if="__props.showWordLimit && __props.maxlength" class="word-number">
+            {{ viewValue.length + '/' + __props.maxlength }}
         </view>
     </view>
 </template>
 <script>
-    import { jsonToCss } from '@/components/sy-ui/utils'
-    import defaultValue from '@/components/sy-ui/utils/defaultValue'
+    import props from './props'
+    import mixinProps from '../../mixin/props'
+    import { objectToCss } from '../../utils'
 
     export default {
         name: 'SyTextarea',
-        props: {
-            value: null,
-            focus: null,
-            fixed: { type: Boolean, default: false },
-            styles: Object,
-            height: { default: defaultValue.textarea.height }, // 输入框的高度
-            readonly: { type: Boolean, default: false }, // 是否只读
-            disabled: { type: Boolean, default: false }, // 是否禁用
-            maxlength: { default: defaultValue.textarea.maxlength }, // 可输入的最大长度
-            quickInput: null, // 是否启用快速输入模式，启用时当input获取焦点且value等于指定值时，自动清空value，从而避免用户还需要删除原来的值
-            autoHeight: { type: Boolean, default: false }, // 是否自动增高，设置auto-height时，style.height不生效
-            placeholder: String, // 没有值时的占位符
-            confirmType: String, // 设置键盘右下角按钮的文字，仅在type='text'时生效
-            showWordLimit: { type: Boolean, default: false }, // 是否显示输入字数统计
-            nativeProps: { type: Object, default: () => ({}) }// 其他原生属性
-        },
+        mixins: [mixinProps],
+        props,
         data() {
             return {
                 visible: true,
@@ -88,19 +67,17 @@
         },
         computed: {
             style() {
-                return jsonToCss(this.styles)
-            },
-            valueLength() {
-                return (this.inputValue || '').length
+                return objectToCss(this.__props.styles)
             }
         },
         watch: {
-            value() {
+            '__props.value'() {
                 this.updateValue()
             }
         },
         mounted() {
-            // 记录input的value变化时的次数，触发value监听时减一，只有等于0时才会更新viewValue
+            // 记录input的value变化时的次数，触发value监听时-1，只有等于0时才会更新viewValue
+            // 用于解决连续输入时，$emit发送到父组件，父组件更新value，再更新到子组件这段时间的延迟，导致文本跳动的问题
             this.inputCount = 0
             this.updateValue()
         },
@@ -114,8 +91,8 @@
             // 更新value
             updateValue() {
                 if (--this.inputCount <= 0) {
-                    var value = this.value
-                    if (value === null || value === undefined) {
+                    let value = this.__props.value
+                    if (value === null || value === void 0) {
                         value = ''
                     }
                     this.inputCount = 0
@@ -125,20 +102,23 @@
             },
             // 失去焦点时触发
             handleBlur(e) {
-                if (String(this.inputValue) !== this.viewValue) {
-                    this.viewValue = String(this.inputValue)
+                let viewValue = String(this.viewValue)
+                let inputValue = String(this.inputValue)
+                if (inputValue !== viewValue) {
+                    viewValue = inputValue
                 }
+                this.viewValue = viewValue
                 this.$emit('blur', e)
             },
             // 获得焦点时触发
             handleFocus(e) {
-                let viewValue = this.inputValue
-                let inputValue = this.inputValue
-                if (Array.isArray(this.quickInput)) {
-                    if (this.quickInput.findIndex(v => String(v) === String(inputValue)) > -1) {
+                let viewValue = String(this.inputValue)
+                let inputValue = String(this.inputValue)
+                if (Array.isArray(this.__props.quickInput)) {
+                    if (this.__props.quickInput.findIndex(v => String(v) === inputValue) > -1) {
                         viewValue = ''
                     }
-                } else if (String(this.quickInput) === String(inputValue)) {
+                } else if (String(this.__props.quickInput) === inputValue) {
                     viewValue = ''
                 }
                 this.viewValue = viewValue
@@ -153,19 +133,14 @@
 </script>
 <style lang="scss" scoped>
 .sy-textarea{
-    display: flex;
-    flex-direction: column;
     .input-wrap{
         position: relative;
         display: flex;
-        .textarea {
-            textarea {
-                width: 100%;
-                height: 100%;
-                font-size: inherit;
-            }
+        textarea {
+            width: 100%;
+            height: 100%;
         }
-        .textarea,
+        textarea,
         .input-text{
             flex: 1;
             line-height: inherit;

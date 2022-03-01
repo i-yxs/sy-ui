@@ -15,23 +15,24 @@
                     :style="item.style"
                     :class="{disabled: item.disabled}"
                     class="item sy-ui-border-top"
-                    @tap="handleActive(item, index)"
+                    @click="handleActive(item, index)"
                 >
                     {{ item.text }}
                 </view>
             </template>
+            <sy-safe-area-inset />
         </view>
     </sy-popover>
 </template>
 <script>
 
-    import { jsonToCss } from '@/components/sy-ui/utils'
+    import { objectToCss } from '../../utils'
 
     export default {
         name: 'SyActionSheet',
         props: {
             options: Array,
-            visible: { type: Boolean, default: false },
+            visible: Boolean,
             // 是否在点击菜单项后关闭
             closeOnClick: { type: Boolean, default: true },
             // 是否在点击遮罩层后关闭
@@ -49,19 +50,18 @@
              * 如果在watch中定义，且组件处于v-for中，v-for列表更新时会出现下面的错误，暂时没有找到原因
              * “ Error in callback for watcher "options": "TypeError: Cannot read property 'call' of undefined" ”
              */
-            this.$watch('options', this.setOptions, {
+            this.$watch('options', this.updateOptions, {
                 deep: true
             })
-            this.setOptions()
+            this.updateOptions()
         },
         methods: {
-            setOptions(options = this.options) {
-                if (Array.isArray(options)) {
-                    this.optionConfig = options.map(item => {
-                        item.style = jsonToCss(item.style)
-                        return item
-                    })
-                }
+            updateOptions(options = this.options) {
+                if (!Array.isArray(options)) return
+                this.optionConfig = options.map(item => {
+                    item.style = objectToCss(item.style)
+                    return item
+                })
             },
             handleClose() {
                 this.$emit('update:visible', false)

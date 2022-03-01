@@ -5,34 +5,23 @@
 <template>
     <view class="sy-picker">
         <sy-picker-input
-            :value="viewValue"
-            :height="height"
-            :hidden="hidden"
-            :overlay="overlay"
-            :loading="loading"
-            :prefix-icon="prefixIcon"
-            :suffix-icon="suffixIconName"
-            :disabled="disabled"
-            :clearable="clearable"
-            :placeholder="placeholder"
-            :input-props="inputProps"
-            readonly
+            :props="pickerInputProps"
             @click="show"
             @clear="handleClear"
         />
         <sy-popover
-            :visible="visibles.popover"
+            v-model="popover.content"
+            :visible="popover.visible"
             position="bottom"
-            @update="visibles.picker = $event"
             @masktap="handleCancel"
         >
-            <view v-if="visibles.picker" class="popover-wrap">
-                <view v-if="allowCreate" class="head-wrap">
+            <view v-if="popover.content" class="popover-wrap">
+                <view v-if="__props.allowCreate && __props.mode === 'selector'" class="head-wrap">
                     <view class="input-wrap">
                         <view class="input">
                             <sy-input
                                 v-model="createInput.value"
-                                :placeholder="createPlaceholder"
+                                :placeholder="__props.createPlaceholder"
                                 height="70rpx"
                                 clearable
                                 confirm-type="done"
@@ -57,18 +46,7 @@
                 <view class="body-wrap">
                     <sy-picker-view
                         ref="SyPickerView"
-                        :deep="deep"
-                        :mode="mode"
-                        :value="value"
-                        :options="fixOptions"
-                        :label-key="labelKey"
-                        :value-key="valueKey"
-                        :children-key="childrenKey"
-                        :emit-path="emitPath"
-                        :format="format"
-                        :min="min"
-                        :max="max"
-                        height="260rpx"
+                        :props="pickerViewProps"
                     />
                 </view>
                 <view class="foot-wrap">
@@ -79,108 +57,105 @@
                         <sy-button type="primary" text="确定" @click="handleConfirm" />
                     </view>
                 </view>
+                <sy-safe-area-inset />
             </view>
         </sy-popover>
     </view>
 </template>
 <script>
 
-    import dateTools from '@/components/sy-ui/utils/dateTools'
-    import publicProps from '@/components/sy-ui/utils/publicProps'
+    import store from '@/store'
+    import props from './props'
+    import { getProperty } from '../../utils'
+    import dateTools from '../../utils/dateTools'
+    import mixinProps, { assignProps } from '../../mixin/props'
+    import mixinProvide from '../../mixin/provideComponent'
 
     export default {
         name: 'SyPicker',
-        props: {
-            // 选择的值
-            value: { default: '' },
-            // 设置value时显示的日期格式，只有mode=date、time有效
-            format: { type: String },
-            separator: { type: String, default: '/' },
-            allowCreate: { type: Boolean, default: false },
-            createPlaceholder: { type: String, default: '输入需要创建的新条目' },
-            // SyPickerView参数
-            mode: { default: 'selector' },
-            min: null,
-            max: null,
-            options: null,
-            labelKey: { default: 'label' },
-            valueKey: { default: 'value' },
-            // linkage选择器参数
-            deep: { default: 999 },
-            emitPath: { default: false },
-            childrenKey: { default: 'children' },
-            ...publicProps.pickerInput
-        },
+        mixins: [mixinProps, mixinProvide],
+        props,
         data() {
             return {
-                visibles: {
-                    picker: false,
-                    popover: false
+                popover: {
+                    content: false,
+                    visible: false
                 },
                 viewValue: '',
-                fixOptions: [],
                 createInput: {
                     value: '',
                     focus: false
-                }
+                },
+                createOptions: []
             }
         },
         computed: {
-            suffixIconName() {
-                if (!this.readonly && !this.disabled) {
-                    return this.loading ? 'sy-ui-icon-loading' : this.suffixIcon
+            options_() {
+                let options = this.isEmpty(this.provideData) ? this.__props.options : this.provideData
+                if (typeof options === 'string') {
+                    options = getProperty(store.state.baseData, options)
                 }
-                return ''
+                options = Array.isArray(options) ? options : []
+                return options
+            },
+            pickerViewProps() {
+                return assignProps('SyPickerView', {
+                    ...this.__props,
+                    height: '260rpx',
+                    options: [
+                        ...this.createOptions,
+                        ...this.options_
+                    ]
+                })
+            },
+            pickerInputProps() {
+                return assignProps('SyPickerInput', {
+                    ...this.__props,
+                    value: this.viewValue
+                })
             }
         },
         watch: {
-            value() {
+            '__props.value'() {
                 this.updateViewValue()
             },
-            options() {
-                this.setOptions()
+            options_() {
+                this.updateOptions()
             }
         },
         mounted() {
-            this.setOptions()
+            this.updateOptions()
         },
         methods: {
             // 显示弹出层
             show() {
-                if (!this.readonly && !this.disabled) {
-                    this.visibles.popover = true
-                }
+                if (this.__props.readonly || this.__props.loading || this.__props.disabled) return
+                this.popover.visible = true
             },
             // 关闭弹出层
             hide() {
-                this.visibles.popover = false
+                this.popover.visible = false
             },
             // 设置数据源
-            setOptions(options = this.options) {
-                if (typeof options === 'string') {
-                    try {
-                        options = JSON.parse(options) || []
-                    } catch (err) {
-                        options = []
-                        console.error(err)
-                    }
-                }
-                if (this.mode === 'linkage') {
+            updateOptions() {
+                let options = this.options_
+                if (!Array.isArray(options)) return
+                if (this.__props.mode === 'linkage') {
                     this.rootNodes = []
                     this.nodesData = []
                     if (Array.isArray(options) && options.length) {
                         var maxDeep = 0
                         var recursion = (data, parentNode, path, deep) => {
-                            if (data.length && deep <= this.deep) {
+                            if (data.length && deep <= this.__props.deep) {
                                 maxDeep = Math.max(maxDeep, deep)
                                 return data.filter(item => item).map((item, index) => {
                                     var nowPath = `${path}${index}`
-                                    var children = item[this.childrenKey] || []
+                                    var children = item[this.__props.childrenKey] || []
                                     var node = {
                                         data: item,
                                         path: nowPath,
-                                        label: item[this.labelKey],
-                                        value: item[this.valueKey]
+                                        label: item[this.__props.labelKey],
+                                        value: item[this.__props.valueKey]
                                     }
                                     node.children = recursion(children, node, `${nowPath}.`, deep + 1)
                                     return node
@@ -190,64 +165,60 @@
                             }
                         }
                         this.nodesData = recursion(options, null, '', 1)
-                        this.maxDeep = Math.min(maxDeep, this.deep)
+                        this.maxDeep = Math.min(maxDeep, this.__props.deep)
                     }
                 }
-                this.fixOptions = options
                 this.updateViewValue()
             },
             // props的value改变时，需要当前组件自己获取显示input值
             updateViewValue() {
-                if (this.isEmpty(this.value)) {
-                    this.viewValue = ''
-                } else {
-                    switch (this.mode) {
-                    case 'selector':
-                        if (this.fixOptions) {
-                            this.viewValue = (this.fixOptions.find(item => item[this.valueKey] === this.value) || {})[this.labelKey] || ''
-                        } else {
-                            this.viewValue = ''
-                        }
-                        break
-                    case 'multiSelector':
-                        if (this.fixOptions) {
-                            var values = this.fixOptions.map((item, index) => item.find(v => v[this.valueKey] === this.value[index]))
-                            if (values.findIndex(v => !v) === -1) {
-                                this.viewValue = values.map(v => v[this.labelKey]).join(this.separator)
-                            } else {
-                                this.viewValue = ''
-                            }
-                        } else {
-                            this.viewValue = ''
-                        }
-                        break
-                    case 'linkage':
-                        if (this.rootNodes && this.value) {
-                            var value = this.emitPath ? this.value.slice(-1)[0] : this.value
-                            var node = this.rootNodes.find(item => item.value === value)
-                            if (node) {
-                                var path = node.path
-                                node = {
-                                    children: this.nodesData
-                                }
-                                this.viewValue = path.split('.').map(index => {
-                                    node = node.children[index]
-                                    return node.label
-                                }).join(this.separator)
-                            } else {
-                                this.viewValue = ''
-                            }
-                        } else {
-                            this.viewValue = ''
-                        }
-                        break
-                    case 'date':
-                        this.viewValue = dateTools.format(this.value, this.format || 'YYYY-MM-DD')
-                        break
-                    case 'time':
-                        this.viewValue = dateTools.format(this.value, this.format || 'HH:mm:ss')
-                        break
+                let options = this.pickerViewProps.options
+                switch (this.__props.mode) {
+                case 'selector':
+                    if (options) {
+                        this.viewValue = (options.find(item => item[this.__props.valueKey] === this.__props.value) || {})[this.__props.labelKey] || ''
+                    } else {
+                        this.viewValue = ''
                     }
+                    break
+                case 'multiSelector':
+                    if (options) {
+                        let values = options.map((item, index) => item.find(v => v[this.__props.valueKey] === this.__props.value[index]))
+                        if (values.findIndex(v => !v) === -1) {
+                            this.viewValue = values.map(v => v[this.__props.labelKey]).join(this.__props.separator)
+                        } else {
+                            this.viewValue = ''
+                        }
+                    } else {
+                        this.viewValue = ''
+                    }
+                    break
+                case 'linkage':
+                    if (this.rootNodes) {
+                        let value = this.__props.emitPath ? this.__props.value.slice(-1)[0] : this.__props.value
+                        let node = this.rootNodes.find(item => item.value === value)
+                        if (node) {
+                            let path = node.path
+                            node = {
+                                children: this.nodesData
+                            }
+                            this.viewValue = path.split('.').map(index => {
+                                node = node.children[index]
+                                return node.label
+                            }).join(this.__props.separator)
+                        } else {
+                            this.viewValue = ''
+                        }
+                    } else {
+                        this.viewValue = ''
+                    }
+                    break
+                case 'date':
+                    this.viewValue = dateTools.format(this.__props.value, this.__props.format || 'YYYY-MM-DD')
+                    break
+                case 'time':
+                    this.viewValue = dateTools.format(this.__props.value, this.__props.format || 'HH:mm:ss')
+                    break
                 }
             },
             // 点击取消按钮时触发
@@ -263,7 +234,11 @@
             },
             // 点击确定按钮时触发
             handleConfirm() {
-                var value = this.$refs.SyPickerView.getValue()
+                let value = this.$refs.SyPickerView.getValue()
+                let { mode, valueFormat } = this.__props
+                if (['date', 'time'].includes(mode) && valueFormat) {
+                    value = dateTools.format(value, valueFormat)
+                }
                 this.$emit('input', value)
                 this.$emit('change', value)
                 this.hide()
@@ -277,11 +252,11 @@
             },
             // 创建新条目时触发
             handleCreateOption() {
-                var value = this.createInput.value
+                let value = this.createInput.value
                 if (value !== '') {
-                    this.fixOptions.splice(0, 0, {
-                        [this.labelKey]: value,
-                        [this.valueKey]: value
+                    this.createOptions.splice(0, 0, {
+                        [this.__props.labelKey]: value,
+                        [this.__props.valueKey]: value
                     })
                     this.createInput.value = ''
                     this.$emit('input', value)

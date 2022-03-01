@@ -22,9 +22,11 @@ module.exports = {
     'vue/script-indent': [
       'error', 4, { 'baseIndent': 1 }
     ],
+    'vue/attribute-hyphenation': 0,
     //props不用必须设置默认值
     "vue/require-prop-types":false,
     "vue/require-default-prop":false,
+
     "vue/max-attributes-per-line": [2, {
       "singleline": 10,
       "multiline": {

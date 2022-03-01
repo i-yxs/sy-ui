@@ -4,69 +4,56 @@
 !-->
 <template>
     <view
-        v-if="viewData.visible"
-        :class="{'sy-ui-border-top': nodeProps.showLineBetween}"
+        v-if="props.visible"
+        :class="{'sy-ui-border-top': treeProps.showLineBetween}"
         class="tree-node"
     >
-        <view :style="{minHeight: nodeProps.nodeHeight}" class="tree-view">
+        <view :style="{minHeight: treeProps.nodeHeight}" class="tree-view">
             <view class="tree-left" @click="handleNodeClick">
                 <view
                     v-if="children"
-                    :class="[nodeProps.nodeIcon, {expanded: viewData.expanded}]"
-                    :style="{width: nodeProps.nodeIconSize, fontSize: nodeProps.nodeIconSize, color: nodeProps.nodeIconColor}"
+                    :class="[treeProps.nodeIcon, {expanded: props.expanded}]"
+                    :style="nodeIconStyle"
                     class="tree-icon"
                 />
                 <view
-                    v-else-if="viewData.level > 1"
-                    :style="{width: nodeProps.nodeIconSize}"
+                    v-else-if="props.level > 1"
+                    :style="nodeIconStyle"
                     class="tree-icon-block"
                 />
                 <view class="tree-name">
-                    <view :style="{'-webkit-line-clamp': nodeProps.nodeLabelRows}" class="sy-ui-folded">
-                        <text>{{ viewData.label }}</text>
-                        <text v-if="nodeProps.showNodeCount && children" class="count">
-                            ({{ viewData.childrenCount }})
+                    <view :style="{'-webkit-line-clamp': treeProps.nodeLabelRows}" class="sy-ui-folded">
+                        <text>{{ props.label }}</text>
+                        <text v-if="treeProps.showNodeCount && children" class="count">
+                            ({{ props.childrenCount }})
                         </text>
                     </view>
                 </view>
             </view>
-            <template v-if="nodeProps.selectable">
-                <view v-if="nodeProps.multiple" class="tree-right" @click="handleCheckChange">
-                    <sy-checkbox :value="viewData.selected" :indeterminate="viewData.indeterminate" size="30rpx" />
+            <template v-if="treeProps.selectable">
+                <view v-if="treeProps.multiple" class="tree-right" @click="handleCheckChange">
+                    <sy-checkbox :value="props.selected" :indeterminate="props.indeterminate" size="30rpx" />
                 </view>
-                <view v-else-if="!children || nodeProps.checkStrictly" class="tree-right" @click="handleCheckChange">
-                    <sy-radio :value="viewData.selected" :label="true" size="30rpx" />
+                <view v-else-if="!children || treeProps.checkStrictly" class="tree-right" @click="handleCheckChange">
+                    <sy-radio :value="props.selected" :label="true" size="30rpx" />
                 </view>
             </template>
         </view>
         <view v-if="children" :style="{height: childHeight}" class="tree-child">
-            <template v-for="item in children">
+            <template v-for="path in children">
                 <tree-node
-                    v-if="item.ready || viewData.expanded || animationing"
-                    ref="TreeNode"
-                    :key="item.index"
-                    @ready="handleNodeReady(item.index)"
+                    v-if="props.expanded || animationing"
+                    :key="path"
+                    :path="path"
                 />
             </template>
         </view>
     </view>
 </template>
 <script>
-    import publicProps from './publicProps'
+    import { objectToCss } from '../../utils'
     // 组件
     import TreeNode from './tree-node'
-    // 常量
-    const WatchProps = [
-        'level',
-        'label',
-        'visible',
-        'disabled',
-        'selected',
-        'expanded',
-        'expandedCount',
-        'childrenCount',
-        'indeterminate'
-    ]
 
     export default {
         name: 'TreeNode',
@@ -74,77 +61,67 @@
             TreeNode
         },
         props: {
+            path: String
         },
         data() {
-            var nodeProps = {}
-            Object.keys(publicProps).forEach(key => {
-                nodeProps[key] = publicProps[key].default
-            })
             return {
+                props: {},
                 // 子节点列表
                 children: null,
-                // 视图数据
-                viewData: {},
-                // 公共节点属性
-                nodeProps,
                 // 当前节点是否播放动画中
                 animationing: false
             }
         },
+        inject: ['provideComponent'],
         computed: {
+            treeProps() {
+                return this.provideComponent.__props
+            },
             childHeight() {
-                if (this.viewData.expanded) {
-                    if (this.nodeProps.enableAnimate && this.nodeProps.nodeHeight) {
-                        return this.viewData.expandedCount * uni.upx2px(Number(this.nodeProps.nodeHeight.replace(/[^\d]+/, ''))) + 'px'
+                if (this.props.expanded) {
+                    if (this.treeProps.enableAnimate && this.treeProps.nodeHeight) {
+                        return this.props.expandedCount * uni.upx2px(Number(this.treeProps.nodeHeight.replace(/[^\d]+/, ''))) + 'px'
                     }
                     return 'initial'
                 }
                 return 0
+            },
+            nodeIconStyle() {
+                return objectToCss(this.treeProps.nodeIconStyle)
             }
         },
         mounted() {
-            // 动画播放计时器
-            this.animationTimer = null
-            this.$emit('ready')
+            this.treeNode = this.provideComponent.$tree.findToPath(this.path)
+            this.treeNode.$vue = this
+            // 获取子节点
+            if (this.treeNode.children) {
+                this.children = this.treeNode.children.map(node => node.path)
+            }
+            // 设置节点属性
+            let props = {}
+            ;[
+                'level',
+                'label',
+                'visible',
+                'disabled',
+                'selected',
+                'expanded',
+                'expandedCount',
+                'childrenCount',
+                'indeterminate'
+            ].forEach(key => {
+                props[key] = this.treeNode[key]
+            })
+            this.props = props
         },
         methods: {
             // 设置属性
             setProps(props) {
                 Object.keys(props).forEach(key => {
-                    if (key in this.viewData) {
-                        this.viewData[key] = props[key]
+                    if (key in this.props) {
+                        this.props[key] = props[key]
                     }
                 })
-            },
-            // 初始化节点数据
-            initNodeData(treeNode) {
-                var viewData = {}
-                WatchProps.forEach(key => {
-                    viewData[key] = treeNode[key]
-                })
-                if (treeNode.children) {
-                    this.children = treeNode.children.map((v, index) => {
-                        return {
-                            index,
-                            ready: false
-                        }
-                    })
-                }
-                this.viewData = viewData
-                this.treeNode = treeNode
-            },
-            // 更新节点属性
-            updateNodeProps(data) {
-                Object.keys(data).forEach(key => {
-                    this.nodeProps[key] = data[key]
-                })
-                if (this.treeNode.children) {
-                    this.treeNode.children.forEach(node => {
-                        if (node.$node) {
-                            node.$node.updateNodeProps(data)
-                        }
-                    })
-                }
             },
             // 更新展开状态
             updateExpanded() {
@@ -154,56 +131,43 @@
                     this.animationing = false
                 }, 300)
             },
-            // 子节点准备就绪时触发
-            handleNodeReady(index) {
-                let $node = this.$refs.TreeNode[index]
-                let treeNode = this.treeNode.children[index]
-                treeNode.setProps({
-                    $node,
-                    $parentNode: this
-                })
-                $node.initNodeData(treeNode)
-                $node.updateNodeProps(this.nodeProps)
-                this.children[index].ready = true
-            },
             // 点击节点时触发
             handleNodeClick() {
-                if (this.nodeProps.selectable && !this.treeNode.children) {
+                if (this.treeProps.selectable && !this.treeNode.children) {
                     // 如果节点可以选中，且没有子节点，点击节点则选中该节点
                     this.handleCheckChange()
                 } else {
                     if (this.treeNode.children) {
                         // 有子节点时才能展开
                         this.treeNode.setExpanded(!this.treeNode.expanded)
-                        this.treeNode.$root.$emit('node-expand', {
-                            node: this.treeNode, // 节点对象
-                            data: this.treeNode.$data // 节点对于的数据
+                        this.provideComponent.$emit('node-expand', {
+                            path: this.path,
+                            data: this.treeNode.data // 节点对于的数据
                         })
                     }
                 }
-                this.treeNode.$root.$emit('node-click', {
-                    node: this.treeNode, // 节点对象
-                    data: this.treeNode.$data // 节点对应的数据
+                this.provideComponent.$emit('node-click', {
+                    path: this.path,
+                    data: this.treeNode.data // 节点对应的数据
                 })
             },
             // 点击选择按钮时触发
             handleCheckChange() {
-                if (this.nodeProps.selectable) {
-                    if (this.nodeProps.multiple) {
+                if (this.treeProps.selectable) {
+                    if (this.treeProps.multiple) {
                         // 多选
                         this.treeNode.setSelected(!this.treeNode.selected)
                     } else {
                         // 单选时，只有checkStrictly为ture，或没有子节点时才能选中
-                        if (this.nodeProps.checkStrictly || !this.children) {
+                        if (this.treeProps.checkStrictly || !this.children) {
                             this.treeNode.setSelected(true)
                         }
                     }
                     // 触发事件
-                    this.treeNode.$root.$emit('check-change', {
-                        node: this.treeNode, // 节点对象
-                        data: this.treeNode.$data, // 节点对于的数据
-                        select: this.treeNode.selected, // 节点的选中状态
-                        selected: this.treeNode.$rootNode.selected.map(path => this.treeNode.$rootNode.findToPath(path)) // 选中的节点列表
+                    this.provideComponent.$emit('check-change', {
+                        path: this.path, // 节点路径
+                        data: this.treeNode.data, // 节点对于的数据
+                        selected: this.treeNode.selected // 节点的选中状态
                     })
                 }
             }

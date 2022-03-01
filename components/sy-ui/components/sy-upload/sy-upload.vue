@@ -6,22 +6,21 @@
     <!--图片选择-->
     <view
         :class="{
-            readonly: readonly,
-            disabled: disabled,
-            overlay: overlay
+            overlay: __props.overlay,
+            disabled: __props.disabled,
         }"
         class="sy-upload"
     >
-        <template v-if="!hidden">
+        <template v-if="!__props.hidden">
             <view v-if="showFileList || showActionButton" class="preview-list">
                 <!-- 选择文件按钮 -->
                 <view v-if="showActionButton" class="preview-item">
                     <view
-                        :class="[size, {round: round, circle: circle}]"
+                        :class="[__props.size, {round: __props.round, circle: __props.circle}]"
                         class="action-button"
-                        @tap="handleChooseButton"
+                        @click="handleChooseButton"
                     >
-                        <template v-if="!overlay">
+                        <template v-if="!__props.overlay">
                             <view class="action-icon sy-ui-icon-camera" />
                             <view v-if="configOption.actionText" class="action-text">
                                 {{ configOption.actionText }}
@@ -37,13 +36,13 @@
                         class="preview-item"
                     >
                         <view
-                            :class="[size, {round: round, circle: circle}]"
+                            :class="[__props.size, {round: __props.round, circle: __props.circle}]"
                             class="preview-wrap"
                         >
                             <view
                                 v-if="file.fileType === 'video'"
                                 class="preview-video"
-                                @tap="handlePlayVideo(file)"
+                                @click="handlePlayVideo(file)"
                             >
                                 <view class="sy-ui-icon-play" />
                             </view>
@@ -52,13 +51,13 @@
                                     :src="getPreviewPath(file)"
                                     class="preview-image"
                                     mode="aspectFill"
-                                    @tap="handlePreviewImage(file)"
+                                    @click="handlePreviewImage(file)"
                                 />
                             </view>
                             <view
-                                v-if="configOption.showRemove && !readonly"
+                                v-if="configOption.showRemove && !__props.readonly"
                                 class="remove-button"
-                                @tap="handleDelete(file, 'uploaded')"
+                                @click="handleDelete(file, 'uploaded')"
                             >
                                 <view class="icon sy-ui-icon-close"/>
                             </view>
@@ -85,7 +84,7 @@
                                 <view
                                     v-if="file.progress === -1"
                                     class="error-text"
-                                    @tap="handleRestart(file)"
+                                    @click="handleRestart(file)"
                                 >
                                     重试
                                 </view>
@@ -96,7 +95,7 @@
                             <view
                                 v-if="file.progress === -1 && configOption.showRemove"
                                 class="remove-button"
-                                @tap="handleDelete(file, 'uploading')"
+                                @click="handleDelete(file, 'uploading')"
                             >
                                 <view class="icon sy-ui-icon-close"/>
                             </view>
@@ -110,14 +109,14 @@
                     v-for="(file, index) in fileShowList.fileList"
                     :key="index"
                     class="file-item sy-ui-border-top"
-                    @tap="handlePreviewFile(file)"
+                    @click="handlePreviewFile(file)"
                 >
                     <text class="name sy-ui-folded f1">{{ file.fileName || '未知文件' }}</text>
                     <text v-if="file.downloading" class="progress">{{ file.progress }}%</text>
                     <text
-                        v-if="configOption.showRemove && !readonly"
+                        v-if="configOption.showRemove && !__props.readonly"
                         class="remove-button sy-ui-icon-close"
-                        @tap.stop="handleDelete(file, 'uploaded')"
+                        @click.stop="handleDelete(file, 'uploaded')"
                     />
                 </view>
                 <!-- 正在上传的非媒体文件列表 -->
@@ -131,15 +130,15 @@
                     <text
                         v-if="file.progress === -1 && configOption.showRemove"
                         class="remove-button sy-ui-icon-close"
-                        @tap="handleDelete(file, 'uploading')"
+                        @click="handleDelete(file, 'uploading')"
                     />
                 </view>
             </view>
-            <view v-if="readonly && !fileList.length" class="input-placeholder">
-                {{ placeholder }}
+            <view v-if="__props.readonly && !__props.fileList.length" class="input-placeholder">
+                {{ __props.placeholder }}
             </view>
         </template>
-        <view v-if="!readonly" class="export-canvas">
+        <view v-if="!__props.readonly" class="export-canvas">
             <!-- #ifdef MP-WEIXIN -->
             <canvas
                 :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
@@ -159,10 +158,10 @@
                 object-fit="fill"
                 autoplay
             />
-            <view class="close sy-ui-icon-close" @tap="videoUrl = ''" />
+            <view class="close sy-ui-icon-close" @click="videoUrl = ''" />
         </view>
         <sy-action-sheet
-            v-if="!readonly && !disabled"
+            v-if="!__props.readonly && !__props.disabled"
             :visible.sync="popoverVisible"
             :options="sourceTypeEnum"
             @click="handleSourceChange"
@@ -171,44 +170,23 @@
 </template>
 <script>
     // 方法
+    import props from './props'
+    import mixinProps from '../../mixin/props'
+    import { systemInfo } from '../../utils'
     import {
         QUEUES_KEY,
         DEFAULT_CONFIG,
         OPEN_FILE_TYPE,
         SOURCE_TYPE_ENUM,
         getFileType,
-        getLocation,
-        getImageInfo,
         getFileExtension,
         getEllipsisString
     } from './utils'
 
     export default {
         name: 'SyUpload',
-        props: {
-            // 组件的尺寸，mini、small、medium、normal
-            size: { type: String, default: 'normal' },
-            // 是否圆角
-            round: { type: Boolean, default: false },
-            // 是否圆形
-            circle: { type: Boolean, default: false },
-            // 配置项
-            config: { type: Object, default: () => ({}) },
-            // 默认展示的文件列表
-            fileList: { type: Array, default: () => [] },
-            // 是否只读
-            readonly: { type: Boolean, default: false },
-            // 是否禁用
-            disabled: { type: Boolean, default: false },
-            // 是否为覆盖模式，组件变为不可见，覆盖容器内容
-            overlay: { type: Boolean, default: false },
-            // 是否显示组件，组件变为不可见，可以使用ref获取组件实例
-            hidden: { type: Boolean, default: false },
-            // 没有值时的占位符
-            placeholder: String,
-            // 是否绘制前获取地理位置
-            locationToBeforeDraw: { type: Boolean, default: false }
-        },
+        mixins: [mixinProps],
+        props,
         data() {
             return {
                 // #ifdef MP-WEIXIN
@@ -220,6 +198,7 @@
                 videoUrl: '',
                 canvasWidth: 0, // canvas的宽度
                 canvasHeight: 0, // canvas的高度
+                uploadedList: [], // 上传完成的文件列表
                 uploadingList: [], // 上传中的文件列表
                 popoverVisible: false // 用于表示source-type弹出层的显示状态
             }
@@ -235,56 +214,66 @@
                     mediaUpload: uploadingList.filter(v => ['image', 'video'].includes(v.fileType))
                 }
             },
-            // 上传完成的文件列表
-            uploadedList() {
-                return this.fileList.map(({ fileId, fileName, previewPath }) => {
-                    return {
-                        fileId,
-                        fileType: getFileType(fileName),
-                        fileName: getEllipsisString(fileName || '', 40),
-                        progress: 0,
-                        previewPath,
-                        downloading: false
-                    }
-                })
-            },
             // 是否显示文件列表
             showFileList() {
-                return !this.overlay && (this.fileList.length || this.uploadingList.length)
+                return !this.__props.overlay && (this.__props.fileList.length || this.uploadingList.length)
             },
             // 是否显示按钮
             showActionButton() {
-                return !this.isMaxFileCount && !this.readonly
+                return !this.isMaxFileCount && !this.__props.readonly
             },
-            // 当前图片数量
-            imageCount() {
-                return this.fileList.length + this.uploadingList.length
+            // 当前文件数量
+            fileCount() {
+                return this.__props.fileList.length + this.uploadingList.length
             },
             // 当前配置
             configOption() {
-                return Object.assign({}, DEFAULT_CONFIG, this.config)
+                return Object.assign({}, DEFAULT_CONFIG, this.__props.config)
             },
             // 是否达到最大上传图片张数
             isMaxFileCount() {
-                return this.imageCount >= this.configOption.maxFileCount
+                return this.fileCount >= this.configOption.maxFileCount
             },
             // 选择来源列表
             sourceTypeEnum() {
-                return SOURCE_TYPE_ENUM.filter(item => this.configOption.sourceType.indexOf(item.value) > -1)
+                return SOURCE_TYPE_ENUM.filter(item => {
+                    if (this.configOption.sourceType.indexOf(item.value) > -1) {
+                        // // #ifndef MP-WEIXIN
+                        // if (item.value === 'message') return false
+                        // // #endif
+                        return true
+                    }
+                })
             }
         },
         watch: {
-            readonly: {
+            '__props.readonly': {
                 immediate: true,
                 handler() {
                     // context2d
                     this.context2d = uni.createCanvasContext(this.canvasId, this)
                 }
+            },
+            '__props.fileList': {
+                deep: true,
+                immediate: true,
+                handler(fileList) {
+                    this.uploadedList = fileList.map(({ fileId, fileName, previewPath }) => {
+                        return {
+                            fileId,
+                            fileType: getFileType(fileName),
+                            fileName: getEllipsisString(fileName || '', 55),
+                            progress: 0,
+                            previewPath,
+                            downloading: false
+                        }
+                    })
+                }
             }
         },
         mounted() {
             // 获取屏幕dpr
-            this.dpr = uni.getSystemInfoSync().pixelRatio
+            this.dpr = systemInfo.pixelRatio
             // 队列处理列表，因为所有组件共用一个canvas，所以这里用$root保存队列数据
             this.queues = this.$root[QUEUES_KEY] = this.$root[QUEUES_KEY] || []
         },
@@ -350,6 +339,34 @@
                     break
                 }
                 return fileData
+            },
+            // Promise方式获取地理位置
+            getLocation() {
+                return new Promise(function(resolve, reject) {
+                    uni.getLocation({
+                        type: 'gcj02',
+                        success(res) {
+                            resolve({
+                                location: res
+                            })
+                        },
+                        fail: reject
+                    })
+                })
+            },
+            // Promise方式获取图片信息
+            getImageInfo(path) {
+                return new Promise((resolve, reject) => {
+                    uni.getImageInfo({
+                        src: path,
+                        success(res) {
+                            resolve({
+                                imageInfo: res
+                            })
+                        },
+                        fail: reject
+                    })
+                })
             },
             // 队列处理
             handleQueues(index) {
@@ -435,13 +452,13 @@
                     if (fileData.path || fileData.fileType !== 'image') {
                         resolve(fileData.path)
                     } else {
-                        const promises = []
-                        if (this.locationToBeforeDraw) {
+                        let promises = []
+                        if (this.__props.locationToBeforeDraw) {
                             // 获取地理位置
-                            promises.push(getLocation())
+                            promises.push(this.getLocation())
                         }
                         // 获取图片信息
-                        promises.push(getImageInfo(fileData.original))
+                        promises.push(this.getImageInfo(fileData.original))
 
                         var timer = this.handleTimeout(reject)
 
@@ -458,7 +475,7 @@
                              */
                             let width = otherData.imageInfo.width
                             let height = otherData.imageInfo.height
-                            const ratio = Math.max(width, height) / this.configOption.exportSize
+                            let ratio = Math.max(width, height) / this.configOption.exportSize
                             if (ratio > 1) {
                                 width = (width / ratio) | 0
                                 height = (height / ratio) | 0
@@ -531,12 +548,12 @@
                     if (fileData.thumb || fileData.fileType !== 'image') {
                         resolve(fileData.thumb)
                     } else {
-                        getImageInfo(fileData.path)
+                        this.getImageInfo(fileData.path)
                             .then(({ imageInfo }) => {
-                                const wh = 100
+                                let wh = 100
                                 let sx = 0
                                 let sy = 0
-                                const min = Math.min(
+                                let min = Math.min(
                                     imageInfo.width,
                                     imageInfo.height
                                 )
@@ -649,11 +666,7 @@
                 let uploading = this.uploadingList.filter(item => item.progress >= 0 && item.progress < 100).length
                 let uploadfail = this.uploadingList.filter(item => item.progress === -1).length
                 if (name !== 'change') {
-                    this.$emit(name, {
-                        ...data,
-                        uploading,
-                        uploadfail
-                    })
+                    this.$emit(name, data)
                 }
                 this.$emit('change', {
                     uploading,
@@ -705,7 +718,7 @@
                 uniApi = uni.chooseImage
                 // #endif
                 uniApi({
-                    count: Math.min(maxFileCount - this.imageCount, 9),
+                    count: Math.min(maxFileCount - this.fileCount, 9),
                     camera,
                     mediaType: this.mediaType,
                     sourceType: [type],
@@ -741,6 +754,11 @@
                                     size: item.size,
                                     duration: Number(item.duration.toFixed(2))
                                 })
+                            } else {
+                                fileData = this.getFileData({
+                                    type: 'file',
+                                    path: item.tempFilePath
+                                })
                             }
                             this.joinQueues(fileData)
                             return fileData
@@ -757,7 +775,7 @@
             handleChooseFile() {
                 let { maxFileCount, messageFileType, messageFileExtension } = this.configOption
                 uni.chooseMessageFile({
-                    count: Math.min(maxFileCount - this.imageCount, 100),
+                    count: Math.min(maxFileCount - this.fileCount, 100),
                     type: messageFileType,
                     extension: messageFileExtension,
                     success: res => {
@@ -787,6 +805,7 @@
                     if (file.previewPath) {
                         uni.openDocument({
                             filePath: file.previewPath,
+                            fileType: getFileExtension(file.fileName),
                             fail: (res) => {
                                 this.showToast(res.errMsg)
                             }
@@ -842,11 +861,6 @@
                     break
                 }
             },
-            // 删除上传失败的文件
-            handleDeleteUpload(file) {
-                this.uploadingList.splice(index, 1)
-                this.handleEmit('removeFailFile')
-            },
             // 点击播放视频
             handlePlayVideo(file) {
                 this.videoUrl = this.getPreviewPath(file)
@@ -863,7 +877,7 @@
             display: flex;
             align-items: center;
             height: 60rpx;
-            color: $APP_COLOR;
+            color: #0c6bff;
             &:active {
                 background: #f9f9f9;
             }

@@ -21,7 +21,7 @@ export const DEFAULT_CONFIG = {
     maxFileCount: 9, // 最大上传文件数量 back、front
     camera: 'back', // 使用前置或后置摄像头
     mediaType: ['image', 'video'], // 可选择的文件类型
-    sourceType: ['camera', 'album'], // 指定以什么方式选择文件
+    sourceType: ['camera', 'album', 'message'], // 指定以什么方式选择文件
     messageFileType: 'all', // 从客户端选择的文件类型 all、video、image、file
     messageFileExtension: void 0, // 根据文件拓展名过滤，仅 messageFileType==file 时有效。每一项都不能是空字符串。默认不过滤
     fileUrl: '', // 指定文件url，与文件url拼接
@@ -36,6 +36,23 @@ export const FILE_TYPE = {
     'image': 'bmp,jpg,jpeg,png,gif,webp'.split(','),
     'video': 'mp4,m3u8,ogg,webm'.split(',')
 }
+// 获取图片对象
+export function getImage(src, canvas) {
+    return new Promise((resolve, reject) => {
+        let img
+        // #ifdef MP-WEIXIN
+        img = canvas.createImage()
+        // #endif
+        // #ifdef H5
+        img = new Image()
+        // #endif
+        img.onload = function() {
+            resolve(img)
+        }
+        img.src = src
+        img.onerror = reject
+    })
+}
 // 获取文件类型
 export function getFileType(fileName) {
     return Object.keys(FILE_TYPE).find(type => {
@@ -47,11 +64,7 @@ export function getLocation() {
     return new Promise(function(resolve, reject) {
         uni.getLocation({
             type: 'gcj02',
-            success(res) {
-                resolve({
-                    location: res
-                })
-            },
+            success: resolve,
             fail: reject
         })
     })
@@ -61,11 +74,7 @@ export function getImageInfo(path) {
     return new Promise((resolve, reject) => {
         uni.getImageInfo({
             src: path,
-            success(res) {
-                resolve({
-                    imageInfo: res
-                })
-            },
+            success: resolve,
             fail: reject
         })
     })
@@ -108,4 +117,12 @@ export function getEllipsisString(string, length) {
         return substringByte(prefix, length) + '...' + substringByte(suffix, -length)
     }
     return string
+}
+/**
+ * Promise方式setTimeout
+ */
+export function promiseSetTimeout(time) {
+    return new Promise(function(resolve) {
+        setTimeout(resolve, time)
+    })
 }

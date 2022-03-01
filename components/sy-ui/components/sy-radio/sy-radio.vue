@@ -5,19 +5,29 @@
 <template>
     <view class="sy-radio">
         <view
-            :class="{ button: button, checked: checked, readonly: readonly, disabled: disabled }"
-            :style="{ lineHeight: size }"
+            :class="{
+                button: __props.button,
+                checked: checked,
+                disabled: __props.disabled
+            }"
+            :style="{ lineHeight: __props.size }"
             class="radio-wrap"
-            @tap="handleActive"
+            @click="handleActive"
         >
             <view
                 :class="checked ? 'sy-ui-icon-radio-fill' : 'sy-ui-icon-radio'"
-                :style="{ width: size, height: size, lineHeight: size, color: color, fontSize: size }"
+                :style="{
+                    width: __props.size,
+                    height: __props.size,
+                    lineHeight: __props.size,
+                    color: __props.color,
+                    fontSize: __props.size
+                }"
                 class="icon"
             />
             <slot>
-                <text v-if="text" class="text">
-                    {{ text }}
+                <text v-if="__props.text" class="text">
+                    {{ __props.text }}
                 </text>
             </slot>
         </view>
@@ -25,41 +35,32 @@
 </template>
 <script>
 
-    import defaultValue from '@/components/sy-ui/utils/defaultValue'
+    import props from './props'
+    import mixinProps from '../../mixin/props'
 
     export default {
         name: 'SyRadio',
-        props: {
-            text: String,
-            value: null,
-            label: { default: '' },
-            size: { type: String, default: defaultValue.checkbox.size },
-            color: { type: String, default: defaultValue.checkbox.color },
-            button: { type: Boolean, default: false },
-            // 是否可以取消选中
-            isCancel: { type: Boolean, default: false },
-            // 是否只读
-            readonly: { type: Boolean, default: false },
-            disabled: { type: Boolean, default: false }
-        },
+        mixins: [mixinProps],
+        props,
         data() {
             return {
                 checked: false
             }
         },
         watch: {
-            value: {
+            '__props.value': {
                 immediate: true,
                 handler(value) {
-                    this.checked = this.label === value
+                    this.checked = this.__props.label === value
                 }
             }
         },
         methods: {
             handleActive() {
-                var value = this.label
-                if (this.isCancel) {
-                    value = this.value === value ? '' : value
+                if (this.__props.readonly) return
+                let value = this.__props.label
+                if (this.__props.isCancel) {
+                    value = this.__props.value === value ? '' : value
                 }
                 this.$emit('input', value)
                 this.$emit('change', value)
@@ -68,7 +69,6 @@
     }
 </script>
 <style lang="scss" scoped>
-
 .sy-radio{
     display: inline-flex;
     .radio-wrap {
@@ -82,8 +82,8 @@
         }
         &.button {
             min-width: 150rpx;
-            height: 50rpx;
-            line-height: 50rpx;
+            height: 52rpx;
+            line-height: 52rpx;
             padding: 0 30rpx;
             font-weight: bold;
             color: $APP_COLOR;
@@ -94,7 +94,7 @@
             transition: .2s ease-in-out;
             &.checked {
                 color: #fff;
-                background: $APP_COLOR;
+                background: $APP_BACKGROUND;
             }
             .icon{
                 display: none;
@@ -103,18 +103,12 @@
                 margin-left: 0;
             }
         }
-        &.readonly {
-            pointer-events: none;
-        }
         &.disabled{
             pointer-events: none;
             color: #c0c4cc;
             .icon{
                 color: #e2e2e2 !important;
             }
-        }
-        &.hidden {
-            display: none;
         }
     }
 }

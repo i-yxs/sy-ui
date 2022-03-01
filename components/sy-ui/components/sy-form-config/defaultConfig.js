@@ -1,12 +1,13 @@
 
-import defaultValue from '@/components/sy-ui/utils/defaultValue'
+import inputProps from '../sy-input/props'
+import pickerInputProps from '../sy-picker-input/props'
 
 export default {
     /**
-     * default- 开头的配置用于配置项没有值时的默认值
+     * form配置
      */
     // 表单项是否以横向排列
-    'default-cell': [
+    'cell': [
         {
             'name': 'default',
             'rule': {
@@ -14,20 +15,50 @@ export default {
             }
         }
     ],
+    // 表单项的左右对齐方式
+    'align': [
+        {
+            'name': 'styleType',
+            'rule': {
+                'form': 'right',
+                'filter': 'right'
+            }
+        },
+        {
+            'name': 'prop',
+            'rule': [
+                {
+                    // 表单项 readonly = true 时返回 true
+                    'name': 'readonly',
+                    'value': true,
+                    'return': 'left'
+                }
+            ]
+        },
+        {
+            'name': 'type',
+            'rule': [
+                {
+                    'regex': '^textarea$',
+                    'return': 'left'
+                }
+            ]
+        }
+    ],
     // 标签容器和输入容器是否以纵向排列
-    'default-column': [
+    'column': [
         {
             'name': 'styleType',
             'rule': {
                 'form': false,
-                'filter': true
+                'filter': false
             }
         },
         {
             'name': 'type',
             'rule': [
                 {
-                    'regex': '^upload$|^textarea$',
+                    'regex': '^textarea$',
                     'return': true
                 }
             ]
@@ -37,10 +68,19 @@ export default {
             'rule': {
                 'readonly': false
             }
+        },
+        {
+            'name': 'type',
+            'rule': [
+                {
+                    'regex': '^upload$',
+                    'return': true
+                }
+            ]
         }
     ],
     // 表单项是否显示
-    'default-visible': [
+    'visible': [
         {
             'name': 'default',
             'rule': {
@@ -49,7 +89,7 @@ export default {
         }
     ],
     // 表单项是否必填
-    'default-required': [
+    'required': [
         {
             'name': 'styleType',
             'rule': {
@@ -58,7 +98,7 @@ export default {
         }
     ],
     // 表单项是否只展示，不能编辑
-    'default-readonly': [
+    'readonly': [
         {
             'name': 'default',
             'rule': {
@@ -67,7 +107,7 @@ export default {
         }
     ],
     // 表单项是否显示标签
-    'default-showLabel': [
+    'showLabel': [
         {
             'name': 'default',
             'rule': {
@@ -94,8 +134,18 @@ export default {
             ]
         }
     ],
+    // 标签文本垂直对齐方式
+    'labelAlign': [
+        {
+            'name': 'styleType',
+            'rule': {
+                'form': 'center',
+                'filter': 'center'
+            }
+        }
+    ],
     // 表单项是否显示标签冒号
-    'default-showLabelColon': [
+    'showLabelColon': [
         {
             'name': 'prop',
             'rule': [
@@ -108,38 +158,29 @@ export default {
             ]
         }
     ],
-    // 表单项的左右对齐方式
-    'default-align': [
+    // 表单项上传组件是否是单文件模式
+    'monofile': [
         {
-            'name': 'styleType',
+            'name': 'default',
             'rule': {
-                'form': 'right',
-                'filter': 'left'
+                'return': false
             }
-        },
-        {
-            'name': 'prop',
-            'rule': [
-                {
-                    // 表单项 readonly = true 时返回 true
-                    'name': 'readonly',
-                    'value': true,
-                    'return': 'left'
-                }
-            ]
         },
         {
             'name': 'type',
             'rule': [
                 {
-                    'regex': '^textarea$',
-                    'return': 'left'
+                    'regex': '^uploadCard$',
+                    'return': true
                 }
             ]
         }
     ],
+    /**
+     * 组件配置
+     */
     // 表单项的显示行数
-    'default-rows': [
+    'props.rows': [
         {
             'name': 'default',
             'rule': {
@@ -155,10 +196,16 @@ export default {
                     'return': ''
                 }
             ]
+        },
+        {
+            'name': 'styleType',
+            'rule': {
+                'readonly': ''
+            }
         }
     ],
     // 表单项组件的树结构深度
-    'default-deep': [
+    'props.deep': [
         {
             'name': 'default',
             'rule': {
@@ -166,11 +213,39 @@ export default {
             }
         }
     ],
-    // 表单项组件的高度
-    'default-height': [
+    // 表单项组件的输入框类型
+    'props.type': [
         {
             'name': 'type',
             'rule': [
+                {
+                    'regex': '^input$',
+                    'return': 'text'
+                },
+                {
+                    'regex': '^pickerDate$',
+                    'return': 'date'
+                },
+                {
+                    'regex': '^pickerDateTime$',
+                    'return': 'date'
+                }
+            ]
+        }
+    ],
+    // 表单项组件的高度
+    'props.height': [
+        {
+            'name': 'type',
+            'rule': [
+                {
+                    'regex': '^input$',
+                    'return': inputProps.height.default
+                },
+                {
+                    'regex': '^picker',
+                    'return': pickerInputProps.height.default
+                },
                 {
                     'regex': '^textarea$',
                     'return': '150rpx'
@@ -189,7 +264,7 @@ export default {
         }
     ],
     // 表单项组件是否可清空
-    'default-clearable': [
+    'props.clearable': [
         {
             'name': 'styleType',
             'rule': {
@@ -199,7 +274,7 @@ export default {
         }
     ],
     // 表单项组件的占位符
-    'default-placeholder': [
+    'props.placeholder': [
         {
             'name': 'type',
             'rule': [
@@ -221,7 +296,7 @@ export default {
         }
     ],
     // 表单项组件的最大输入字数
-    'default-maxlength': [
+    'props.maxlength': [
         {
             'name': 'type',
             'rule': [
@@ -240,17 +315,8 @@ export default {
             ]
         }
     ],
-    // 表单项组件的输入框类型
-    'default-inputType': [
-        {
-            'name': 'default',
-            'rule': {
-                'return': 'text'
-            }
-        }
-    ],
     // 表单项组件的间隔符
-    'default-separator': [
+    'props.separator': [
         {
             'name': 'default',
             'rule': {
@@ -261,32 +327,22 @@ export default {
             'name': 'type',
             'rule': [
                 {
-                    'regex': '^pickerDate$',
+                    'regex': '^inputRange$',
                     'return': '至'
-                }
-            ]
-        }
-    ],
-    // 表单项上传组件是否是单文件模式
-    'default-monofile': [
-        {
-            'name': 'default',
-            'rule': {
-                'return': false
-            }
-        },
-        {
-            'name': 'type',
-            'rule': [
+                },
                 {
-                    'regex': '^uploadCard$',
-                    'return': true
+                    'regex': '^pickerDate$',
+                    'return': ' 至 '
+                },
+                {
+                    'regex': '^checkbox$',
+                    'return': '，'
                 }
             ]
         }
     ],
     // 其他配置
-    'default-trueLabel': [
+    'props.trueLabel': [
         {
             'name': 'type',
             'rule': [
@@ -297,7 +353,7 @@ export default {
             ]
         }
     ],
-    'default-trueValue': [
+    'props.trueValue': [
         {
             'name': 'type',
             'rule': [
@@ -308,7 +364,7 @@ export default {
             ]
         }
     ],
-    'default-falseValue': [
+    'props.falseValue': [
         {
             'name': 'type',
             'rule': [
@@ -319,7 +375,7 @@ export default {
             ]
         }
     ],
-    'default-falseLabel': [
+    'props.falseLabel': [
         {
             'name': 'type',
             'rule': [
@@ -330,7 +386,7 @@ export default {
             ]
         }
     ],
-    'default-labelKey': [
+    'props.labelKey': [
         {
             'name': 'default',
             'rule': {
@@ -338,7 +394,7 @@ export default {
             }
         }
     ],
-    'default-valueKey': [
+    'props.valueKey': [
         {
             'name': 'default',
             'rule': {
@@ -346,7 +402,7 @@ export default {
             }
         }
     ],
-    'default-childrenKey': [
+    'props.childrenKey': [
         {
             'name': 'default',
             'rule': {
@@ -354,17 +410,17 @@ export default {
             }
         }
     ],
-    'default-prefixIcon': [
+    'props.prefixIcon': [
         {
             'name': 'type',
             'rule': [
                 {
                     'regex': '^picker',
-                    'return': defaultValue.pickerInput.prefixIcon
+                    'return': pickerInputProps.prefixIcon.default
                 },
                 {
                     'regex': '^pickerLocation$',
-                    'return': defaultValue.pickerLocation.prefixIcon
+                    'return': pickerInputProps.prefixIcon.default
                 }
             ]
         },
@@ -379,26 +435,39 @@ export default {
             ]
         }
     ],
-    'default-suffixIcon': [
+    'props.suffixIcon': [
         {
             'name': 'type',
             'rule': [
                 {
                     'regex': '^picker',
-                    'return': defaultValue.pickerInput.suffixIcon
+                    'return': pickerInputProps.suffixIcon.default
                 }
             ]
         }
     ],
-    'default-inputProps': [
+    'props.button': [
         {
-            'name': 'type',
-            'rule': [
-                {
-                    'regex': '^pickerLocation$',
-                    'return': defaultValue.pickerLocation.inputProps
-                }
-            ]
+            'name': 'default',
+            'rule': {
+                'return': true
+            }
+        }
+    ],
+    'props.showAllLevels': [
+        {
+            'name': 'default',
+            'rule': {
+                'return': true
+            }
+        }
+    ],
+    'props.quickInput': [
+        {
+            'name': 'default',
+            'rule': {
+                'return': 0
+            }
         }
     ]
 }

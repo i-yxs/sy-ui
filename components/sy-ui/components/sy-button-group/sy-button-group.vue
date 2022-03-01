@@ -4,32 +4,39 @@
 !-->
 <template>
     <view
-        :class="{vertical: vertical}"
+        v-if="__props.options.length > 0"
+        :class="{column: __props.column}"
         class="sy-button-group"
     >
         <sy-button
-            v-for="(item, index) in options"
+            v-for="(item, index) in options_"
             :key="index"
-            :text="item.text"
-            :type="item.type"
-            :plain="item.plain"
-            :loading="item.loading"
-            :disabled="item.disabled"
-            :prefix-icon="item.prefixIcon"
-            :suffix-icon="item.suffixIcon"
-            :styles="item.styles"
+            :props="item"
             @click="handleActive(item, index)"
         />
     </view>
 </template>
 <script>
+
+    import store from '@/store'
+    import props from './props'
+    import { getProperty } from '../../utils'
+    import mixinProps from '../../mixin/props'
+    import mixinProvide from '../../mixin/provideComponent'
+
     export default {
         name: 'SyButtonGroup',
-        props: {
-            // 是否垂直布局
-            vertical: { type: Boolean, default: false },
-            // 数据源
-            options: { type: Array, default: () => [] }
+        mixins: [mixinProps, mixinProvide],
+        props,
+        computed: {
+            options_() {
+                let options = this.isEmpty(this.provideData) ? this.__props.options : this.provideData
+                if (typeof options === 'string') {
+                    options = getProperty(store.state.baseData, options)
+                }
+                options = Array.isArray(options) ? options : []
+                return options
+            }
         },
         methods: {
             handleActive(data, index) {
@@ -46,7 +53,7 @@
 .sy-button-group{
     display: flex;
     align-items: center;
-    &.vertical{
+    &.column{
         align-items: initial;
         flex-direction: column;
     }
@@ -60,7 +67,7 @@
         }
     }
 }
-.vertical{
+.column{
     /deep/{
         sy-button + sy-button{
             margin-top: 30rpx;
@@ -78,7 +85,7 @@
         }
     }
 }
-.vertical{
+.column{
     align-items: initial;
     flex-direction: column;
     /deep/{

@@ -1,121 +1,104 @@
 <!--
-* @description 加载更多
+* @description 加载提示
 * @author yxs
 !-->
 <template>
     <view
         v-if="type !== 'hide'"
-        :style="{color: currentType.color, height: currentType.height, background: currentType.background}"
-        :class="{column: currentType.column}"
+        :style="styles_"
+        :class="{column: config_.column}"
         :data-type="type"
         class="sy-load-more"
     >
         <div
-            v-if="currentType.icon"
-            :class="currentType.icon"
-            :style="{color: currentType.iconColor, fontSize: currentType.iconSize, height: currentType.iconSize, lineHeight: currentType.iconSize}"
+            v-if="config_.icon"
+            :class="config_.icon"
+            :style="iconStyles_"
             class="icon"
         />
-        <div :style="{color: currentType.textColor, margin: textMargin}" class="text">
-            {{ currentType.text }}
+        <div :style="textStyles_" class="text">
+            {{ config_.text }}
         </div>
     </view>
 </template>
 <script>
-    const Config = {
+
+    import { deepMerge, objectToCss } from '../../utils'
+
+    const typeConfig = {
         tips: {
             text: '上拉加载更多',
-            space: '12rpx',
-            color: '#999',
-            height: '120rpx'
+            styles: {
+                color: '#999',
+                height: '120rpx'
+            }
         },
         loading: {
             text: '加载中',
             icon: 'sy-ui-icon-loading',
-            space: '12rpx',
-            color: '#999',
-            height: '120rpx'
+            styles: {
+                color: '#999',
+                height: '120rpx'
+            },
+            iconStyles: {
+                margin: '0 12rpx 0 0'
+            }
         },
         empty: {
             text: '无数据',
             icon: 'sy-ui-icon-not-data',
-            space: '10rpx',
-            color: '#999',
-            height: '200rpx',
+            styles: {
+                color: '#999',
+                height: '200rpx'
+            },
             column: true,
-            iconSize: '100rpx',
-            iconColor: '#cecece'
+            iconStyles: {
+                color: '#cecece',
+                fontSize: '100rpx',
+                margin: '0 0 12rpx 0'
+            }
         },
         maxpage: {
             text: '没有更多了',
-            space: '12rpx',
-            color: '#999',
-            height: '120rpx'
+            styles: {
+                color: '#999',
+                height: '120rpx'
+            }
         },
         error: {
             text: '请求出错了',
             icon: 'sy-ui-icon-not-data',
-            space: '20rpx',
-            color: '#999',
-            height: '300rpx',
+            styles: {
+                color: '#999',
+                height: '300rpx'
+            },
             column: true,
-            iconSize: '120rpx',
-            iconColor: '#cecece'
+            iconStyles: {
+                color: '#cecece',
+                fontSize: '120rpx',
+                margin: '0 0 20rpx 0'
+            }
         }
     }
     export default {
         name: 'SyLoadMore',
         props: {
-            type: {
-                type: String,
-                default: 'tips'
-            },
-            config: {
-                type: Object
-            }
-        },
-        data() {
-            return {
-                configOption: {}
-            }
+            type: { type: String, default: 'tips' },
+            config: Object
         },
         computed: {
-            currentType() {
-                return this.configOption[this.type]
+            config_() {
+                return deepMerge(typeConfig, this.config)[this.type] || {}
             },
-            textMargin() {
-                if (this.type !== 'hide') {
-                    if (this.currentType.column) {
-                        return `${this.currentType.space} 0 0 0`
-                    }
-                    return `0 0 0 ${this.currentType.space}`
-                }
-                return ''
+            styles_() {
+                return objectToCss(this.config_.styles)
+            },
+            textStyles_() {
+                return objectToCss(this.config_.textStyles)
+            },
+            iconStyles_() {
+                return objectToCss(this.config_.iconStyles)
             }
-        },
-        watch: {
-            config: {
-                deep: true,
-                immediate: true,
-                handler(value) {
-                    var config = {}
-                    if (value) {
-                        Object.keys(value).forEach(key => {
-                            config[key] = {
-                                ...Config[key],
-                                ...value[key]
-                            }
-                        })
-                    }
-                    this.configOption = {
-                        ...Config,
-                        ...config
-                    }
-                }
-            }
-        },
-        methods: {
-
         }
     }
 </script>
@@ -124,11 +107,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    .icon{
-        display: inline-block;
-    }
+    line-height: 1em;
     &.column{
         flex-direction: column;
+    }
+    .icon,
+    .text{
+        display: inline-block;
     }
 }
 </style>

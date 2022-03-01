@@ -70,7 +70,7 @@ export default {
             if (/(d+)/i.test(format)) {
                 format = format.replace(new RegExp(RegExp.$1, 'g'), Weeks[date.getDay()])
             }
-            // 年份的星期
+            // 年份的第几周
             if (/(W+)/i.test(format)) {
                 var d1 = new Date(date)
                 var d2 = new Date(date)
@@ -177,9 +177,9 @@ export default {
                         return Math.floor(day / 360) + '年前'
                     }
                 } else if (diff > 3600) {
-                    return Math.floor(time / 3600) + '小时前'
+                    return Math.floor(diff / 3600) + '小时前'
                 } else if (diff > 60) {
-                    return Math.floor(time / 60) + '分钟前'
+                    return Math.floor(diff / 60) + '分钟前'
                 } else {
                     return diff + '秒前'
                 }

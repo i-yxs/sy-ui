@@ -5,11 +5,7 @@
 <template>
     <view :style="{height: isSpaceUsage ? height : ''}" class="navigation-bar">
         <view
-            :style="{
-                zIndex: zIndex,
-                color: color,
-                backgroundColor: backgroundColor
-            }"
+            :style="styles_"
             class="sy-navigation-bar"
         >
             <view :style="{height: statusBarHeight + 'px'}" class="status-bar"/>
@@ -30,23 +26,19 @@
 </template>
 <script>
     import styleVars from '@/uni.scss'
-    import { systemInfo } from '@/components/sy-ui/utils'
+    import { systemInfo, objectToCss } from '../../utils'
 
     export default {
         name: 'SyNavigationBar',
         props: {
+            // 是否显示后退按钮
+            back: { type: [Boolean, String], default: false },
             // 标题
             title: { type: String, default: '' },
-            // 字体颜色
-            color: { type: String, default: '#fff' },
-            // zIndex
-            zIndex: { type: [String, Number], default: 1000 },
+            // 自定义样式
+            styles: Object,
             // 是否占用高度
-            isSpaceUsage: { type: Boolean, default: false },
-            // 背景颜色
-            backgroundColor: { type: String, default: styleVars.APP_COLOR },
-            // 是否显示后退按钮
-            back: { type: [Boolean, String], default: false }
+            isSpaceUsage: Boolean
         },
         data() {
             return {
@@ -56,6 +48,14 @@
         computed: {
             height() {
                 return (this.statusBarHeight + 44) + 'px'
+            },
+            styles_() {
+                return objectToCss({
+                    color: '#fff',
+                    zIndex: 1000,
+                    background: styleVars.APP_BACKGROUND,
+                    ...this.styles
+                })
             }
         },
         mounted() {

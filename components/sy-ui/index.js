@@ -1,23 +1,15 @@
 
 import Vue from 'vue'
-import { isEmpty, numberPad, moneyFormat } from './utils'
-import dateTools from './utils/dateTools'
+import mixin from './mixin'
 
 import './index.scss'
 import './iconfont.css'
 
+Vue.mixin(mixin)
+
 var navigateData = {}
-
-Vue.filter('numberPad', numberPad)
-// 日期格式化
-Vue.filter('dateFormat', function(value, format = 'YYYY-MM-DD') {
-    return dateTools.format(value, format) || '- -'
-})
-Vue.filter('moneyFormat', moneyFormat)
-
 // 在vue上挂载全局变量
 Vue.prototype = Object.assign(Vue.prototype, {
-    isEmpty,
     showToast: (title, options) => {
         uni.showToast(Object.assign({
             icon: 'none',
@@ -55,18 +47,13 @@ Vue.prototype = Object.assign(Vue.prototype, {
      * @param String: url     //跳转的url
      * @param Number: data    //传递的数据
      */
-    navigateToData: (url, data) => {
-        const key = 'datakey' + Date.now()
+    navigateToData: (url, data, options) => {
+        let key = 'datakey' + Date.now()
         navigateData[key] = data
-        if (/\?/.test(url)) {
-            uni.navigateTo({
-                url: `${url}&datakey=${key}`
-            })
-        } else {
-            uni.navigateTo({
-                url: `${url}?datakey=${key}`
-            })
-        }
+        uni.navigateTo({
+            url: `${url}${/\?/.test(url) ? '&' : '?'}datakey=${key}`,
+            ...options
+        })
     },
     // 获取从navigateToData方法传递的数据
     getNavigateData: (datakey) => {
@@ -74,6 +61,22 @@ Vue.prototype = Object.assign(Vue.prototype, {
             let data = navigateData[datakey]
             delete navigateData[datakey]
             return data
+        }
+    },
+    // 跳转页面
+    handleGoto(e) {
+        let dataset = e.currentTarget.dataset
+        if (dataset.url) {
+            let params = ''
+            Object.keys(dataset).forEach(key => {
+                if (/^param:/.test(key)) {
+                    params += params ? '&' : ''
+                    params += `${key.replace('param:', '')}=${dataset[key]}`
+                }
+            })
+            uni.navigateTo({
+                url: `${dataset.url}${/\?/.test(dataset.url) ? '&' : '?'}${params}`
+            })
         }
     }
 })

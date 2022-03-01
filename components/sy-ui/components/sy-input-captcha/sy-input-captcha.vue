@@ -5,62 +5,48 @@
 <template>
     <view class="input-captcha">
         <sy-input
-            :type="type"
-            :value="value"
-            :height="height"
-            :loading="loading"
-            :readonly="readonly"
-            :disabled="disabled"
-            :clearable="clearable"
-            :maxlength="maxlength"
-            :placeholder="placeholder"
-            :icon-size="iconSize"
-            :icon-color="iconColor"
-            :prefix-icon="prefixIcon"
+            :props="inputProps"
             @input="$emit('input', $event)"
         >
-            <view
-                v-if="!readonly"
-                slot="append"
-                :class="{cooling: cooling}"
-                class="button"
-                @click="handleButtonActive"
-            >
-                {{ cooling ? `${remainDuration}秒后重新获取` : '获取验证码' }}
-            </view>
+            <template v-if="!__props.readonly" slot="append">
+                <view
+                    :class="{cooling: __props.cooling}"
+                    class="button"
+                    @click="handleButtonActive"
+                >
+                    {{ __props.cooling ? `${remainDuration}秒后重新获取` : '获取验证码' }}
+                </view>
+            </template>
         </sy-input>
     </view>
 </template>
 <script>
 
+    import props from './props'
+    import mixinProps, { assignProps } from '../../mixin/props'
+
     export default {
         name: 'SyInputCaptcha',
-        props: {
-            // 是否冷却中，冷却中按钮文本变更为倒计时
-            cooling: { type: Boolean, default: false },
-            // 是否加载中
-            loading: { type: Boolean, default: false },
-            // 冷却时间，单位秒
-            duration: { default: 60 },
-            type: null,
-            value: null,
-            height: null,
-            iconSize: null,
-            readonly: null,
-            disabled: null,
-            iconColor: null,
-            clearable: null,
-            maxlength: null,
-            prefixIcon: null,
-            placeholder: null
-        },
+        mixins: [mixinProps],
+        props,
         data() {
             return {
                 remainDuration: 0
             }
         },
+        computed: {
+            inputProps() {
+                return assignProps('SyInput', {
+                    ...this.__props,
+                    suffixIcon: this.suffixIconName
+                })
+            },
+            suffixIconName() {
+                return this.__props.loading ? 'sy-ui-icon-loading' : this.__props.suffixIcon
+            }
+        },
         watch: {
-            cooling: {
+            '__props.cooling': {
                 immediate: true,
                 handler(cooling) {
                     if (cooling) {
@@ -72,20 +58,19 @@
         methods: {
             // 更新冷却时间
             updateDuration() {
-                let timer
-                this.remainDuration = Number(this.duration)
-                const loop = () => {
+                let timer = setInterval(loop, 1000)
+                let loop = () => {
                     this.remainDuration--
                     if (this.remainDuration <= 0) {
                         clearInterval(timer)
                         this.$emit('cooled')
                     }
                 }
-                timer = setInterval(loop, 1000)
+                this.remainDuration = Number(this.__props.duration)
             },
             // 点击按钮时触发
             handleButtonActive() {
-                if (!this.cooling) {
+                if (!this.__props.cooling) {
                     this.$emit('active')
                 }
             }

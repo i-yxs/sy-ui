@@ -1,0 +1,31 @@
+
+
+body,
+page {
+  font-size: 28rpx;
+  color: #333;
+  background: #f8f8f8;
+  view, text {
+    line-height: 1.4em;
+  }
+}
+//#ifdef H5
+li {
+  list-style-type: none;
+}
+//#endif
+.link-text {
+  display: inline;
+  color: $APP_COLOR;
+  &:active,
+  &.underline {
+    border-bottom: 1px solid $APP_COLOR;
+  }
+}
+.input-placeholder{
+  color:#999;
+}
+.iconfont {
+  font-size: inherit;
+  font-style: inherit;
+}

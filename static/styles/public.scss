@@ -1,0 +1,17 @@
+// 公共样式
+//#ifdef H5
+.page-wrap {
+    min-height: calc(100vh - var(--window-top) - var(--window-bottom));
+    .main-wrap.fill {
+        height: calc(100vh - var(--window-top) - var(--window-bottom));
+    }
+}
+//#endif
+//#ifdef MP-WEIXIN
+.page-wrap {
+    min-height: 100vh;
+    .main-wrap.fill {
+        height: 100vh;
+    }
+}
+//#endif

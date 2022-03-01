@@ -4,25 +4,29 @@
 !-->
 <template>
     <view
-        :class="{ flex: flex, readonly: readonly, disabled: disabled}"
+        v-if="__props.options.length > 0"
+        :class="{ disabled: __props.disabled}"
         :style="style"
         class="sy-radio-group"
     >
-        <template v-if="readonly">
-            <text v-if="isEmpty(viewValue)" class="input-placeholder">
-                {{ placeholder }}
-            </text>
+        <template v-if="__props.readonly">
+            <text v-if="isEmpty(viewValue)" class="input-placeholder">{{ __props.placeholder }}</text>
             <text v-else>{{ viewValue }}</text>
         </template>
         <view v-else class="group">
-            <view v-for="(item, index) in groupData" :key="index" class="item" @click="handleActive(item)">
+            <view
+                v-for="(item, index) in options_"
+                :key="index"
+                class="item"
+                @click="handleActive(item)"
+            >
                 <sy-radio
-                    :size="size"
-                    :text="item[labelKey]"
-                    :color="color"
+                    :size="__props.size"
+                    :text="item[__props.labelKey]"
+                    :color="__props.color"
                     :value="insideValue"
-                    :label="item[valueKey]"
-                    :button="button"
+                    :label="item[__props.valueKey]"
+                    :button="__props.button"
                     readonly
                 />
             </view>
@@ -31,34 +35,16 @@
 </template>
 <script>
 
-    import { jsonToCss } from '@/components/sy-ui/utils'
-    import defaultValue from '@/components/sy-ui/utils/defaultValue'
+    import store from '@/store'
+    import props from './props'
+    import mixinProps from '../../mixin/props'
+    import { objectToCss, getProperty } from '../../utils'
+    import mixinProvide from '../../mixin/provideComponent'
 
     export default {
         name: 'SyRadioGroup',
-        props: {
-            value: { default: null },
-            styles: Object,
-            // 数据源
-            options: { type: Array, default: () => [] },
-            // 指定label为数据源的某个属性
-            labelKey: { type: String, default: 'label' },
-            // 指定value为数据源的某个属性
-            valueKey: { type: String, default: 'value' },
-            // 是否只读
-            readonly: { type: Boolean, default: false },
-            // 是否禁用
-            disabled: { type: Boolean, default: false },
-            // 使用flex布局
-            flex: { type: Boolean, default: false },
-            // 没有值时的占位符
-            placeholder: String,
-            // SyRadio 组件参数
-            size: { type: String, default: defaultValue.checkbox.size },
-            color: { type: String, default: defaultValue.checkbox.color },
-            button: { default: false },
-            isCancel: { default: false }
-        },
+        mixins: [mixinProps, mixinProvide],
+        props,
         data() {
             return {
                 insideValue: null
@@ -66,21 +52,32 @@
         },
         computed: {
             style() {
-                return jsonToCss(this.styles)
+                return objectToCss(this.__props.styles)
+            },
+            options_() {
+                let options = this.isEmpty(this.provideData) ? this.__props.options : this.provideData
+                let excludes = this.__props.excludes || []
+                let valueKey = this.__props.valueKey
+                if (typeof options === 'string') {
+                    options = getProperty(store.state.baseData, options)
+                }
+                options = Array.isArray(options) ? options : []
+                // 过滤不显示的项
+                options = options.filter(option => {
+                    return excludes.indexOf(option[valueKey]) === -1 && option.visible !== false
+                })
+                return options
             },
             // 只有在value和内部value相同时才能进行交互操作
             canActive() {
-                return this.insideValue === this.value
-            },
-            groupData() {
-                return this.options.filter(item => item.visible !== false)
+                return this.insideValue === this.__props.value
             },
             viewValue() {
-                return (this.groupData.find(item => item[this.valueKey] === this.value) || {})[this.labelKey]
+                return (this.options_.find(item => item[this.__props.valueKey] === this.__props.value) || {})[this.__props.labelKey]
             }
         },
         watch: {
-            value: {
+            '__props.value': {
                 immediate: true,
                 handler(value) {
                     this.insideValue = value
@@ -89,9 +86,10 @@
         },
         methods: {
             handleActive(data) {
+                if (this.__props.readonly) return
                 if (this.canActive) {
-                    var value = data[this.valueKey]
-                    if (data[this.valueKey] === this.value && this.isCancel) {
+                    let value = data[this.__props.valueKey]
+                    if (data[this.__props.valueKey] === this.__props.value && this.__props.isCancel) {
                         value = null
                     }
                     this.insideValue = value
@@ -107,20 +105,9 @@
     display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
-    &.readonly,
-    &.disabled {
-        pointer-events: none;
-    }
-    &.readonly {
-        padding: 0;
-    }
     &.disabled {
         opacity: .7;
-    }
-    &.flex {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
+        pointer-events: none;
     }
     .group {
         margin-left: -16rpx;

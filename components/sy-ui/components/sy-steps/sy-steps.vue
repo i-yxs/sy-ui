@@ -151,7 +151,7 @@
                 border-radius: 50%;
             }
             &.active{
-                background: $APP_COLOR;
+                background: $APP_BACKGROUND;
             }
         }
         .step-text{

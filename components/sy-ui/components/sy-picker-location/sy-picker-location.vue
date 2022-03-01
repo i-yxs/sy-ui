@@ -3,116 +3,81 @@
 * @author yxs
 !-->
 <template>
-    <view
-        :class="{link: isClick}"
-        class="sy-picker-location"
-    >
+    <view :class="{link: isClick}" class="sy-picker-location">
         <sy-picker-input
-            :value="inputLabel"
-            :height="height"
-            :hidden="hidden"
-            :overlay="overlay"
-            :loading="loading"
-            :disabled="disabled"
-            :clearable="clearable"
-            :prefix-icon="prefixIcon"
-            :suffix-icon="suffixIconName"
-            :placeholder="placeholder"
-            :input-props="inputProps"
-            readonly
+            :props="pickerInputProps"
             @clear="handleClear"
             @click="handleClick"
         />
     </view>
 </template>
 <script>
-    // 方法
-	import gcoord from 'gcoord'
-    import publicProps from '@/components/sy-ui/utils/publicProps'
-    import defaultValue from '@/components/sy-ui/utils/defaultValue'
+    // 工具
+    import props from './props'
+    import mixinProps, { assignProps } from '../../mixin/props'
+    import { gcoordTransform } from '../../utils'
 
     export default {
         name: 'SyPickerLocation',
-        components: {
-        },
-        props: {
-            rows: [String, Number],
-            value: null,
-            latitude: [String, Number],
-            longitude: [String, Number],
-            // 是否转换成百度坐标系
-            transform: { type: Boolean, default: true },
-            // picker 参数
-            ...publicProps.pickerInput,
-            prefixIcon: { default: defaultValue.pickerLocation.prefixIcon },
-            inputProps: { default: () => defaultValue.pickerLocation.inputProps }
-        },
+        mixins: [mixinProps],
+        props,
         data() {
             return {
-                inputLabel: ''
+                viewValue: ''
             }
         },
         computed: {
             isClick() {
-                return this.readonly && this.longitude && this.latitude
+                return this.__props.readonly && this.__props.longitude && this.__props.latitude
             },
-            suffixIconName() {
-                if (!this.readonly) {
-                    return this.loading ? 'sy-ui-icon-loading' : this.suffixIcon
-                }
-                return ''
+            pickerInputProps() {
+                return assignProps('SyPickerInput', {
+                    ...this.__props,
+                    value: this.viewValue
+                })
             }
         },
         watch: {
-            value: {
+            '__props.value': {
                 immediate: true,
                 handler(value) {
-                    this.inputLabel = value
+                    this.viewValue = value
                 }
             }
         },
         methods: {
-			transformLocation(location = [], isTransGCJ02 = false) {
-				let trans = isTransGCJ02 ? [gcoord.BD09, gcoord.GCJ02] : [gcoord.GCJ02, gcoord.BD09]
-				try {
-					return gcoord.transform(location, ...trans)
-				} catch (e) {
-					// 失败 操作
-					return [0, 0]
-				}
-			},
             handleClear() {
-                this.inputLabel = ''
+                this.viewValue = ''
                 this.$emit('change')
                 this.$emit('input', '')
             },
             handleClick() {
-                if (this.readonly) {
+                if (this.__props.readonly) {
                     this.handleOpenLocation()
                 } else {
                     this.handleChooseLocation()
                 }
             },
             handleOpenLocation() {
-                if (this.longitude && this.latitude) {
-                    var [longitude, latitude] = this.transform ? this.transformLocation([this.longitude, this.latitude], true) : [this.longitude, this.latitude]
+                if (this.__props.longitude && this.__props.latitude) {
+                    let [longitude, latitude] = this.transform ? gcoordTransform([this.__props.longitude, this.__props.latitude], true) : [this.__props.longitude, this.__props.latitude]
                     uni.openLocation({
                         latitude,
                         longitude,
-                        address: this.value
+                        address: this.__props.value
                     })
                 }
             },
             handleChooseLocation() {
                 uni.chooseLocation({
                     success: (res) => {
-                        [res.longitude, res.latitude] = this.transform ? this.transformLocation([res.longitude, res.latitude]) : [res.longitude, res.latitude]
-                        this.inputLabel = res.address
+                        [res.longitude, res.latitude] = this.__props.transform ? gcoordTransform([res.longitude, res.latitude]) : [res.longitude, res.latitude]
+                        this.viewValue = res.address
                         this.$emit('change', res)
                         this.$emit('input', res.address)
                     },
                     fail: (res) => {
-                        console.log(res)
+                        console.error(res)
                     }
                 })
             }
@@ -120,7 +85,6 @@
     }
 </script>
 <style lang="scss" scoped>
-
 .sy-picker-location{
     &.link {
         color: $APP_COLOR;

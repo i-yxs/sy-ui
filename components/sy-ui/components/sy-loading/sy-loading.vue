@@ -3,7 +3,7 @@
 * @author yxs
 !-->
 <template>
-    <view v-if="value" :style="{color: color, zIndex: zIndex, background: background}" class="sy-loading">
+    <view v-if="value" :style="styles_" class="sy-loading">
         <view :class="{column: column}" class="main-wrap">
             <view class="icon sy-ui-icon-loading" />
             <slot>
@@ -15,21 +15,31 @@
     </view>
 </template>
 <script>
+
     import styleVars from '@/uni.scss'
+    import { objectToCss } from '../../utils'
+
     export default {
         name: 'SyLoading',
         props: {
             // 是否显示
-            value: { type: Boolean, default: false },
+            value: Boolean,
             // 显示的文本
-            text: { type: String, default: '加载中' },
+            text: String,
             // 是否纵列显示
-            column: { type: Boolean, default: false },
-            // 颜色
-            color: { type: String, default: styleVars.APP_COLOR },
-            zIndex: { type: [String, Number], default: 100 },
-            // 背景颜色
-            background: { type: String, default: 'rgba(255,255,255,.6)' }
+            column: Boolean,
+            // 自定义样式
+            styles: Object
+        },
+        computed: {
+            styles_() {
+                return objectToCss({
+                    color: styleVars.APP_COLOR,
+                    zIndex: 100,
+                    background: 'rgba(255,255,255,.6)',
+                    ...this.styles
+                })
+            }
         }
     }
 </script>
@@ -43,15 +53,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 26rpx;
     .main-wrap {
         display: flex;
         align-items: center;
         justify-content: center;
-        .icon {
-            font-size: 26rpx;
-        }
         .text {
-            font-size: 26rpx;
             margin-left: 12rpx;
         }
         &.column {
