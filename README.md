@@ -16,6 +16,6 @@ npm i
 使用方法：
 ---------------------------
 [sy-action-sheet-底部操作菜单](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-action-sheet/README.md)<br>
-[xxx-xxx](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/xxx/README.md)<br>
+[sy-button-按钮](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-button/README.md)<br>
 [xxx-xxx](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/xxx/README.md)<br>
 
