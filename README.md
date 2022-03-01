@@ -13,7 +13,7 @@ npm i
 4、使用HBuilder X运行项目（运行-选择需要运行的平台）<br>
 5、使用HBuilder X发布项目（运行-选择需要发布的平台）<br>
 
-使用方法：
+组件文档：
 ---------------------------
 [sy-action-sheet-底部操作菜单](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-action-sheet/README.md)<br>
 [sy-button-按钮](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-button/README.md)<br>
