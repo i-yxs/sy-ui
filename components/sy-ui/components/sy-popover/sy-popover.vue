@@ -1,5 +1,5 @@
 <!--
-* @description 弹出框
+* @description 弹出层
 * @author yxs
 !-->
 <template>

@@ -1,5 +1,5 @@
 <!--
-* @description 底部栏
+* @description 底部导航栏
 * @author yxs
 !-->
 <template>

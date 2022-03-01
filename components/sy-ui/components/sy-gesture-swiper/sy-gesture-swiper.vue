@@ -1,3 +1,7 @@
+<!--
+* @description 手势滑动切换动画
+* @author yxs
+!-->
 <template>
     <view
         :style="styles_"
