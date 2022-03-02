@@ -59,4 +59,4 @@ sy-calendar
 }
 ```
 
-[< 返回组件列表](https://github.com/i-yxs/sy-ui/blob/main/README.md#%E7%BB%84%E4%BB%B6%E5%88%97%E8%A1%A8)
+[< 返回组件列表](https://github.com/i-yxs/sy-ui/blob/main/README.md#组件列表)
