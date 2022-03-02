@@ -11,7 +11,7 @@ sy-button
 |text|按钮文本|String|-|-|
 |plain|是否朴素按钮|Boolean|-|false|
 |inline|是否内联按钮|Boolean|-|false|
-|styles|自定义样式|Object|-|详见[默认样式styles](https://github.com/i-yxs/sy-ui/blob/main/components/sy-ui/components/sy-button/README.md#默认样式styles)|
+|styles|自定义样式|Object|-|详见[默认styles](https://github.com/i-yxs/sy-ui/blob/main/components/sy-ui/components/sy-button/README.md#默认styles)|
 |loading|是否加载状态|Boolean|-|false|
 |disabled|是否禁用状态|Boolean|-|false|
 |loading|加载状态|Boolean|-|false|
@@ -19,7 +19,7 @@ sy-button
 |prefixIcon|前置图标|String|-|-|
 |suffixIcon|后置图标|String|-|-|
 
-### 默认样式styles
+### 默认styles
 
 ```js
 {
