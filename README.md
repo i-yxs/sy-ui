@@ -2,7 +2,7 @@ SYUI
 ===========================
 兼容全端的UI组件库项目
 
-**使用方法**
+### 使用方法
 
 1、拉取仓库代码到本地
 
@@ -15,7 +15,7 @@ SYUI
 5、使用HBuilder X发布项目（运行-选择需要发布的平台）
 
 
-**目录示例**
+### 目录示例
 
 ```json
 ┌─api                     api接口
@@ -50,7 +50,7 @@ SYUI
 └─uni.scss                全局css变量
 
 ```
-**组件列表**
+### 组件列表
 
 |组件名|组件说明|
 |---|---|
@@ -92,4 +92,38 @@ SYUI
 |sy-tree|[树形控件](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-tree/README.md)|
 |sy-upload|[文件上传](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-upload/README.md)|
 |sy-upload-card|[文件上传卡片样式](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-upload-card/README.md)|
+
+### 解决方案
+> 由于uniapp及微信小程序底层实现的原因，有很多vue的功能无法正常，比如组件的props不支持v-bind、不支持动态组件component、props传递对象时会被JSON.stringify，导致每传递一次，都会生成该对象全新复制，当传递的数据量比较大时会产生严重的性能问题，同时也导致我们无法传递js函数。所以我们引入的几个解决方案用于解决这些问题。
+
+### 二级props
+> 该解决方案用于解决组件的props不支持v-bind、不支持动态组件component<br>
+> <br>
+> 当需要实现一个类似动态组件的功能时，变通的方法则是利用for循环把所有组件遍历出来，然后根据父组件传入的组件名来显示对应的组件，同时为每个组件手动绑定props。这个方法有个很严重的问题，就是我们需要为所有组件显式的绑定props，但是当某个组件修改了props，我们也得为这个动态组件也修改一次，这样会极大的增加维护成本和错误。<br>
+> <br>
+> 所以我们为部分组件的props下增加一个二级props属性，它接收该组件所有支持的一级props，和直接设置组件一级props是一样的效果，不同的是我们可以传入一个动态对象。
+
+### provideData
+> 该解决方案用于解决组件的props传递对象时会被JSON.stringify<br>
+> <br>
+> 利用vue的provide / inject，我们可以在父组件内为子组件注入任意数据，甚至是父组件的vue实例本身。此时我们拿到了父组件的实例对象，当我们想传递给子组件数据时，只需要为子组件指定属性名称即可，子组件则根据传入的组件名称从父组件实例上获取。<br>
+> <br>
+> 使用方法如下：
+
+在父组件定义provide，"provideComponent"名称不能修改
+
+```js
+provide() {
+    return {
+        provideComponent: this
+    }
+}
+```
+子组件利用inject接收
+
+```js
+inject: ['provideComponent']
+```
+
+同时子组件会为props新增一个provideKey属性，用于父组件指定属性名称，可以使用链式写法，比如`aaa.bbb.ccc`，当provideKey更新时，会把获取的数据赋值给provideData，此时子组件就可以通过this.provideData来访问传递过来的数据了
 
