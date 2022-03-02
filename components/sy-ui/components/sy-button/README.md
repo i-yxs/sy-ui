@@ -19,9 +19,7 @@ sy-button
 |prefixIcon|前置图标|String|-|-|
 |suffixIcon|后置图标|String|-|-|
 
-### provideData
-
-默认样式styles
+### 默认样式styles
 
 ```js
 {
