@@ -93,6 +93,13 @@ SYUI
 |sy-upload|[文件上传](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-upload/README.md)|
 |sy-upload-card|[文件上传卡片样式](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-upload-card/README.md)|
 
+### baseData
+> 开发项目时，该项目通常会存在一些稳定的数据（指大部分时间内都不会变动，但是需要从线上服务器请求的数据，比如数据字典、省市区数据等等），这些数据推荐在用户第一次打开页面时，请求并缓存到vuex，不推荐每次需要时就请求一次，这会极大的增加服务器压力。<br>
+> 所以我们在store引入了baseData模块，路径为`store\modules\baseData.js`，用户请求并缓存数据。<br>
+> <br>
+> 通常我们要为某个组件设置配置数据时，需要发送请求->拿到数据->赋值给组件三步操作，但是有了baseData，我们可以把操作缩减到一步。<br>
+> 我们为部分组件的配置项（通常为`options`）增加的String数据类型，可以为它设置baseData内的任意数据属性名（可以使用链式写法），组件内部会自动从baseData获取指定数据。
+
 ### 解决方案
 > 由于uniapp及微信小程序底层实现的原因，有很多vue的功能无法正常，比如组件的props不支持v-bind、不支持动态组件component、props传递对象时会被JSON.stringify，导致每传递一次，都会生成该对象全新复制，当传递的数据量比较大时会产生严重的性能问题，同时也导致我们无法传递js函数。所以我们引入的几个解决方案用于解决这些问题。
 
