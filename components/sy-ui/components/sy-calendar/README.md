@@ -18,7 +18,7 @@ sy-calendar
 |loading|加载状态|Boolean|-|false|
 |yearRange|可选择的年份范围（指当前年份的前后多少年份）|Number|-|100|
 |firstDayOfWeek|周起始日|Number|1-7|1|
-|provideKey|-|String|指定父组件的配置对象名称，数据格式详见[provideData](https://github.com/i-yxs/sy-ui/edit/main/components/sy-ui/components/sy-calendar/README.md#provideData)|-|
+|provideKey|-|String|指定父组件的配置对象名称，数据格式详见[provideData](https://github.com/i-yxs/sy-ui/blob/main/components/sy-ui/components/sy-calendar/README.md#providedata)|-|
 
 ### 日期格式
 
