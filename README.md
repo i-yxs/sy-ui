@@ -93,6 +93,28 @@ SYUI
 |sy-upload|[文件上传](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-upload/README.md)|
 |sy-upload-card|[文件上传卡片样式](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-upload-card/README.md)|
 
+### uni.scss
+> uniapp特有的全局scss文件，该项目只用于定义全局scss变量，可以根据项目需求自行修改
+```css
+// 主色调
+$APP_COLOR
+$APP_COLOR_ACTIVE
+// 主背景色
+$APP_BACKGROUND
+$APP_BACKGROUND_ACTIVE
+// 成功
+$SUCCESS_COLOR
+$SUCCESS_COLOR_ACTIVE
+// 警告
+$WARNING_COLOR
+$WARNING_COLOR_ACTIVE
+// 危险
+$DANGER_COLOR
+$DANGER_COLOR_ACTIVE
+// 信息
+$INFO_COLOR
+$INFO_COLOR_ACTIVE
+```
 ### baseData
 > 开发项目时，该项目通常会存在一些稳定的数据（指大部分时间内都不会变动，但是需要从线上服务器请求的数据，比如数据字典、省市区数据等等），这些数据推荐在用户第一次打开页面时，请求并缓存到vuex，不推荐每次需要时就请求一次，这会极大的增加服务器压力。<br>
 > 所以我们在store引入了baseData模块，路径为`store\modules\baseData.js`，用户请求并缓存数据。<br>
