@@ -1,7 +1,7 @@
 sy-calendar
 ===========================
 用于嵌入页面的日历选择器
-> ##### 该组件支持传入对象props，详见[props组件](https://github.com/i-yxs/sy-ui/edit/main/README.md#props组件)
+> ##### 该组件支持传入对象props，详见[组件的二级props](https://github.com/i-yxs/sy-ui/edit/main/README.md#组件的二级props)
 
 ### 组件参数
 
