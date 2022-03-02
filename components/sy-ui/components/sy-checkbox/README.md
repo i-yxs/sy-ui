@@ -11,7 +11,7 @@ sy-checkbox
 |size|按钮尺寸|String|-|36rpx|
 |text|按钮文本|String|-|-|
 |button|是否按钮样式|Boolean|-|false|
-|color|按钮样式时选中的颜色|String|-|[APP_COLOR](https://github.com/i-yxs/sy-ui/blob/main/README.md#uni.scss)|
+|color|按钮样式时选中的颜色|String|-|[APP_COLOR](https://github.com/i-yxs/sy-ui/blob/main/README.md#uniscss)|
 |readonly|是否只读状态|Boolean|-|false|
 |disabled|是否禁用状态|Boolean|-|false|
 |indeterminate|indeterminate状态|Boolean|-|false|
