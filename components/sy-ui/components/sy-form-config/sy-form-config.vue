@@ -228,6 +228,7 @@
                 :options="provideData.button"
                 @click="_handleButtonActive"
             />
+            <sy-safe-area-inset v-if="fill"/>
         </view>
     </view>
 </template>

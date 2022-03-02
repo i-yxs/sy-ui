@@ -15,17 +15,16 @@
             </view>
         </view>
         <view class="toolbar sy-ui-border-top">
-            <view class="button flex-center sy-ui-icon-arrow-left" @click="handleViewChange(0)"/>
+            <view class="button flex-center sy-ui-icon-arrow-left" @click="handleViewChange('left')"/>
             <view class="label" @click="handleDateTypeChange">
                 <view class="text">{{ viewDate }}</view>
                 <view class="icon sy-ui-icon-arrow-right-fill" />
             </view>
-            <view class="button flex-center sy-ui-icon-arrow-right" @click="handleViewChange(1)"/>
+            <view class="button flex-center sy-ui-icon-arrow-right" @click="handleViewChange('right')"/>
         </view>
         <sy-gesture-swiper
             ref="gestureSwiper"
-            @left="handleViewChange(1)"
-            @right="handleViewChange(0)"
+            @change="handleViewChange"
         >
             <template v-slot="{type}">
                 <calendar-cell
@@ -392,15 +391,16 @@
             handleViewChange(type) {
                 if (this.$refs.gestureSwiper.playing) return
                 let params
+                let isLeft = type === 'left'
                 switch (this.viewDateType) {
                 case 0:
-                    params = type ? this.$calendar.getNextMonth(this.viewYear, this.viewMonth) : this.$calendar.getPrevMonth(this.viewYear, this.viewMonth)
+                    params = isLeft ? this.$calendar.getNextMonth(this.viewYear, this.viewMonth) : this.$calendar.getPrevMonth(this.viewYear, this.viewMonth)
                     break
                 case 1:
-                    params = [this.viewYear + (type ? 1 : -1)]
+                    params = [this.viewYear + (isLeft ? 1 : -1)]
                     break
                 case 2:
-                    params = [this.swiperConfig.enter.viewYearData.slice(type ? -1 : 0)[0] + (type ? 1 : -1)]
+                    params = [this.swiperConfig.enter.viewYearData.slice(isLeft ? -1 : 0)[0] + (isLeft ? 1 : -1)]
                     break
                 }
                 if (params) {

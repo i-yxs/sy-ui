@@ -15,7 +15,7 @@
     // 工具
     import props from './props'
     import mixinProps, { assignProps } from '../../mixin/props'
-    import { gcoordTransform } from '../../utils'
+    import { GCOORD_transform } from '@/utils'
 
     export default {
         name: 'SyPickerLocation',
@@ -60,7 +60,7 @@
             },
             handleOpenLocation() {
                 if (this.__props.longitude && this.__props.latitude) {
-                    let [longitude, latitude] = this.transform ? gcoordTransform([this.__props.longitude, this.__props.latitude], true) : [this.__props.longitude, this.__props.latitude]
+                    let [longitude, latitude] = this.transform ? GCOORD_transform([this.__props.longitude, this.__props.latitude], true) : [this.__props.longitude, this.__props.latitude]
                     uni.openLocation({
                         latitude,
                         longitude,
@@ -71,7 +71,7 @@
             handleChooseLocation() {
                 uni.chooseLocation({
                     success: (res) => {
-                        [res.longitude, res.latitude] = this.__props.transform ? gcoordTransform([res.longitude, res.latitude]) : [res.longitude, res.latitude]
+                        [res.longitude, res.latitude] = this.__props.transform ? GCOORD_transform([res.longitude, res.latitude]) : [res.longitude, res.latitude]
                         this.viewValue = res.address
                         this.$emit('change', res)
                         this.$emit('input', res.address)

@@ -1,5 +1,5 @@
 <!--
-* @description 树形控件选择器
+* @description 树形选择器
 * @author yxs
 !-->
 <template>

@@ -1,5 +1,5 @@
 <!--
-* @description 安全区域占位块
+* @description 开关按钮
 * @author yxs
 !-->
 <template>
@@ -12,7 +12,7 @@
     import { systemInfo, objectToCss } from '../../utils'
 
     export default {
-        name: 'SySafeAreaInset',
+        name: 'SySafeArea',
         props: {
             styles: Object,
             position: { type: String, default: 'bottom' }

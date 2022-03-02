@@ -1,23 +1,15 @@
-<!--
-* @description 手势滑动切换动画
-* @author yxs
-!-->
 <template>
-    <view
-        :style="styles_"
-        class="sy-gesture-swiper"
-        @touchstart="handleStart"
-        @touchend="handleEnd"
-        @touchmove.prevent
-    >
-        <view
-            v-for="(item, index) in types"
-            :key="index"
-            :class="[item.type, playing ? direction: '']"
-        >
-            <slot :type="item.type" />
-        </view>
-        <view v-show="playing" class="mask"/>
+    <view :style="styles_" class="sy-gesture-swiper">
+        <sy-gesture :axis="axis" @change="handleGestureChange">
+            <view
+                v-for="(item, index) in types"
+                :key="index"
+                :class="[item.type, playing ? direction: '']"
+            >
+                <slot :type="item.type" />
+            </view>
+            <view v-show="playing" class="mask"/>
+        </sy-gesture>
     </view>
 </template>
 <script>
@@ -42,10 +34,8 @@
         },
         computed: {
             styles_() {
-                return objectToCss(this.styles)
+                return objectToCss()
             }
-        },
-        mounted() {
         },
         methods: {
             play(direction) {
@@ -58,46 +48,9 @@
                     this.playing = false
                 }, 300)
             },
-            handleStart(res) {
+            handleGestureChange(direction) {
                 if (this.playing) return
-                let touche = res.changedTouches[0]
-                this.touche = {
-                    x: touche.clientX,
-                    y: touche.clientY,
-                    timestamp: Date.now()
-                }
-            },
-            handleEnd(res) {
-                if (this.playing) return
-                if (this.touche) {
-                    let touche = res.changedTouches[0]
-                    let direction = ''
-                    // 滑动的速度每 times 毫秒超过 speed 才触发手势事件
-                    let speed = 50
-                    let times = 300
-                    let pastTime = Date.now() - this.touche.timestamp
-                    if (this.axis === 'h') {
-                        let moveX = touche.clientX - this.touche.x
-                        if (Math.abs(moveX) / (pastTime / times) > speed) {
-                            if (moveX > 0) {
-                                direction = 'right'
-                            } else {
-                                direction = 'left'
-                            }
-                        }
-                    } else {
-                        let moveY = touche.clientY - this.touche.y
-                        if (Math.abs(moveY) / (pastTime / times) > speed) {
-                            if (moveY > 0) {
-                                direction = 'bottom'
-                            } else {
-                                direction = 'top'
-                            }
-                        }
-                    }
-                    this.touche = null
-                    this.$emit(direction)
-                }
+                this.$emit('change', direction)
             }
         }
     }
@@ -109,6 +62,10 @@ $transition: transform 300ms ease-in-out;
 .sy-gesture-swiper{
     position: relative;
     overflow: hidden;
+    sy-gesture {
+        width: 100%;
+        height: 100%;
+    }
     .mask {
         position: absolute;
         top: 0;
