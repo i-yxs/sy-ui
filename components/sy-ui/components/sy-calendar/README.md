@@ -1,7 +1,8 @@
 sy-calendar
 ===========================
 用于嵌入页面的日历选择器
-> ##### 该组件支持传入对象props，详见[二级props](https://github.com/i-yxs/sy-ui/edit/main/README.md#二级props)
+> ##### 该组件支持 [二级props](https://github.com/i-yxs/sy-ui/edit/main/README.md#二级props)
+> ##### 该组件支持 [provideData](https://github.com/i-yxs/sy-ui/edit/main/README.md#provideData)
 
 ### 组件参数
 
@@ -17,6 +18,7 @@ sy-calendar
 |loading|加载状态|Boolean|-|false|
 |yearRange|可选择的年份范围（指当前年份的前后多少年份）|Number|-|100|
 |firstDayOfWeek|周起始日|Number|1-7|1|
+|provideKey|-|String|指定父组件的配置对象名称，数据格式详见[provideData](https://github.com/i-yxs/sy-ui/edit/main/components/sy-ui/components/sy-calendar/README.md#provideData)|-|
 
 ### 日期格式
 
@@ -37,3 +39,22 @@ sy-calendar
 |s|秒|不补0|1|
 |ss|秒|-|01|
 |S|毫秒|-|-|
+
+### provideData
+
+数据格式
+
+```js
+{
+    // 用于在指定日期上显示标记点
+    markers: {
+        // 日期，当使用 YYYY / YYYY-MM / YYYY-MM-DD 时，则为 年份 / 月份 / 日期 视图添加标记点
+        'YYYY-MM-DD': {
+            // 显示的文本
+            text: String,
+            // 自定义样式
+            styles: Object
+        },
+    }
+}
+```
