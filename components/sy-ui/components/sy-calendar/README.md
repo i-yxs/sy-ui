@@ -1,8 +1,8 @@
 sy-calendar
 ===========================
 用于嵌入页面的日历选择器
-> ##### 该组件支持 [二级props](https://github.com/i-yxs/sy-ui/edit/main/README.md#二级props)
-> ##### 该组件支持 [provideData](https://github.com/i-yxs/sy-ui/edit/main/README.md#provideData)
+> ##### 该组件支持 [二级props](https://github.com/i-yxs/sy-ui/blob/main/README.md#二级props)
+> ##### 该组件支持 [provideData](https://github.com/i-yxs/sy-ui/blob/main/README.md#provideData)
 
 ### 组件参数
 
