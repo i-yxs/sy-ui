@@ -112,6 +112,8 @@
                         :mode="pickerDate.mode"
                         :type="pickerDate.type"
                         :format="pickerDate.format[pickerDate.type]"
+                        min="2022-03-01"
+                        max="2022-03-10"
                         clearable
                         placeholder="请选择日期"
                         provideKey="calendarConfig"

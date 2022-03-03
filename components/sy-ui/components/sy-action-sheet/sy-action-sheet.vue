@@ -9,10 +9,10 @@
         @masktap="handleMasktap"
     >
         <view class="sy-action-sheet">
-            <template v-for="(item, index) in optionConfig">
+            <template v-for="(item, index) in options_">
                 <view
                     :key="index"
-                    :style="item.style"
+                    :style="item.styles_"
                     :class="{disabled: item.disabled}"
                     class="item sy-ui-border-top"
                     @click="handleActive(item, index)"
@@ -33,36 +33,24 @@
         props: {
             options: Array,
             visible: Boolean,
-            // 是否在点击菜单项后关闭
-            closeOnClick: { type: Boolean, default: true },
             // 是否在点击遮罩层后关闭
-            maskCloseAble: { type: Boolean, default: true }
+            closeOnMask: { type: Boolean, default: true },
+            // 是否在点击菜单项后关闭
+            closeOnClick: { type: Boolean, default: true }
         },
-        data() {
-            return {
-                optionConfig: []
+        computed: {
+            options_() {
+                if (Array.isArray(this.options)) {
+                    let options = JSON.parse(JSON.stringify(this.options))
+                    return options.map(item => {
+                        item.styles_ = objectToCss(item.styles)
+                        return item
+                    })
+                }
+                return []
             }
         },
-        watch: {
-        },
-        mounted() {
-            /**
-             * 如果在watch中定义，且组件处于v-for中，v-for列表更新时会出现下面的错误，暂时没有找到原因
-             * “ Error in callback for watcher "options": "TypeError: Cannot read property 'call' of undefined" ”
-             */
-            this.$watch('options', this.updateOptions, {
-                deep: true
-            })
-            this.updateOptions()
-        },
         methods: {
-            updateOptions(options = this.options) {
-                if (!Array.isArray(options)) return
-                this.optionConfig = options.map(item => {
-                    item.style = objectToCss(item.style)
-                    return item
-                })
-            },
             handleClose() {
                 this.$emit('update:visible', false)
                 this.$emit('close')
@@ -75,7 +63,7 @@
             },
             // 点击遮罩时触发
             handleMasktap() {
-                if (this.maskCloseAble) {
+                if (this.closeOnMask) {
                     this.handleClose()
                 }
             }

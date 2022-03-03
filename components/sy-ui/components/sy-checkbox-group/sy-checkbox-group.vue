@@ -1,5 +1,5 @@
 <!--
-* @description 多选框组
+* @description 多选按钮组
 * @author yxs
 !-->
 <template>

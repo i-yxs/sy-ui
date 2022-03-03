@@ -1,5 +1,5 @@
 
-import { numberPad } from '../../utils'
+import { isEmpty, numberPad } from '../../utils'
 import dateTools from '../../utils/dateTools'
 
 class Calendar {
@@ -49,18 +49,45 @@ class Calendar {
         }
     }
     // 判断指定日期是否可选
-    isEnabled(date, showToast = true) {
-        let enabled = true
-        if (this.$vue.__props.startDate) {
-            enabled = date >= this.$vue.__props.startDate
+    isOptional(date, showToast = true) {
+        let {
+            min,
+            max,
+            type
+        } = this.$vue.__props
+        let format = ''
+        switch (type) {
+        case 'date':
+        case 'week':
+            format = 'YYYY-MM-DD'
+            break
+        case 'month':
+            format = 'YYYY-MM'
+            break
+        case 'year':
+            format = 'YYYY'
+            break
         }
-        if (this.$vue.__props.endDate && enabled) {
-            enabled = date <= this.$vue.__props.endDate
+        date = dateTools.parse(date)
+        if (!isEmpty(min)) {
+            min = dateTools.parse(min)
+            if (date < min) {
+                if (showToast) {
+                    this.$vue.showToast(`选择的日期不能早于${dateTools.format(min, format)}`)
+                }
+                return false
+            }
         }
-        if (showToast && !enabled) {
-            this.showToast('该日期不能选择')
+        if (!isEmpty(max)) {
+            max = dateTools.parse(max)
+            if (date > max) {
+                if (showToast) {
+                    this.$vue.showToast(`选择的日期不能晚于${dateTools.format(max, format)}`)
+                }
+                return false
+            }
         }
-        return enabled
+        return true
     }
     // 判断平年闰年[四年一闰，百年不闰，四百年再闰]
     isLeapYear(year) {

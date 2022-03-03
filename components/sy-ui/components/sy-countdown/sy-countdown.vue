@@ -16,7 +16,7 @@
     export default {
         name: 'SyCountdown',
         props: {
-            value: { type: [Number, String], default: '' },
+            value: String,
             // 倒计时格式（D天H时m分s秒S毫秒）
             format: { type: String, default: '{D天}HH时mm分ss秒SSS' },
             // 倒计时结束时是否隐藏组件

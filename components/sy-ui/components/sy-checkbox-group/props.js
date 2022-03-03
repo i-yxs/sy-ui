@@ -7,8 +7,8 @@ export default {
         data: checkboxProps,
         props: ['size', 'color', 'button', 'readonly', 'disabled']
     }),
-    min: { default: 0 },
-    max: { default: Infinity },
+    min: { type: [String, Number], default: 0 },
+    max: { type: [String, Number], default: Infinity },
     value: null,
     styles: Object,
     options: [Array, String], // 数据源

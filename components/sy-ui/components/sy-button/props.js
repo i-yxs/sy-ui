@@ -4,9 +4,9 @@ export default {
     plain: Boolean, // 是否朴素按钮
     inline: Boolean, // 是否内联按钮
     styles: Object, // 自定义样式
-    loading: Boolean, // 是否加载中
-    disabled: Boolean, // 是否禁用
+    loading: Boolean, // 是否加载状态
+    disabled: Boolean, // 是否禁用状态
     openType: String, // 微信开放能力
-    prefixIcon: String, // 前缀图标
-    suffixIcon: String // 后缀图标
+    prefixIcon: String, // 前置图标
+    suffixIcon: String // 后置图标
 }

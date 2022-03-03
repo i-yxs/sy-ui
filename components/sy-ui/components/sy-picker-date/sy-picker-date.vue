@@ -19,6 +19,8 @@
                 <view class="body-wrap">
                     <sy-calendar
                         :value="inputValue"
+                        :min="__props.min"
+                        :max="__props.max"
                         :mode="__props.mode"
                         :type="__props.type"
                         :loading="__props.loading"

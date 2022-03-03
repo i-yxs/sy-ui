@@ -229,10 +229,11 @@
             },
             // 点击日期时触发
             handleDateClick(date) {
-                if (this.$calendar.isEnabled(date.value)) {
-                    switch (this.__props.type) {
-                    case 'date':
-                        // 日期选择
+                if (this.isEmpty(this.__props.mode)) return
+                switch (this.__props.type) {
+                case 'date':
+                    // 日期选择
+                    if (this.$calendar.isOptional(date.value)) {
                         switch (this.__props.mode) {
                         case 'radio':
                             this.selected = [date]
@@ -268,22 +269,24 @@
                             this.$emit('change', date)
                             break
                         }
-                        break
-                    case 'week':
-                        // 星期选择
-                        // 先获取选中日期所在周的第一天
-                        date = dateTools.parse(date.value)
-                        var w = date.getDay()
-                        var d = date.getDate()
-                        if (w === 0) {
-                            date.setDate(d - 6)
-                        } else if (w !== 1) {
-                            date.setDate(d - w + 1)
-                        }
-                        var selected = []
-                        selected.push(this.$calendar.createDate(date.getFullYear(), date.getMonth(), date.getDate()))
-                        date.setDate(date.getDate() + 6)
-                        selected.push(this.$calendar.createDate(date.getFullYear(), date.getMonth(), date.getDate()))
+                    }
+                    break
+                case 'week':
+                    // 星期选择
+                    // 先获取选中日期所在周的第一天
+                    date = dateTools.parse(date.value)
+                    var w = date.getDay()
+                    var d = date.getDate()
+                    if (w === 0) {
+                        date.setDate(d - 6)
+                    } else if (w !== 1) {
+                        date.setDate(d - w + 1)
+                    }
+                    var selected = []
+                    selected.push(this.$calendar.createDate(date.getFullYear(), date.getMonth(), date.getDate()))
+                    date.setDate(date.getDate() + 6)
+                    selected.push(this.$calendar.createDate(date.getFullYear(), date.getMonth(), date.getDate()))
+                    if (this.$calendar.isOptional(selected[0].value) && this.$calendar.isOptional(selected.slice(-1)[0].value)) {
                         this.selected = selected
                         this.$emit('input', this.getRangeValue())
                         this.$emit('change', this.selected)
@@ -292,9 +295,10 @@
             },
             // 点击月份时触发
             handleMonthClick(value) {
+                if (this.isEmpty(this.__props.mode)) return
                 let date = this.$calendar.createDate(this.viewYear, value)
                 if (this.__props.type === 'month') {
-                    if (this.$calendar.isEnabled(date.value)) {
+                    if (this.$calendar.isOptional(date.value)) {
                         switch (this.__props.mode) {
                         case 'radio':
                             this.selected = [date]
@@ -340,9 +344,10 @@
             },
             // 点击年份时触发
             handleYearClick(value) {
+                if (this.isEmpty(this.__props.mode)) return
                 let date = this.$calendar.createDate(value)
                 if (this.__props.type === 'year') {
-                    if (this.$calendar.isEnabled(date.value)) {
+                    if (this.$calendar.isOptional(date.value)) {
                         switch (this.__props.mode) {
                         case 'radio':
                             value = this.$calendar.createDate(value)
