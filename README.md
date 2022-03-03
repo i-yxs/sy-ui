@@ -2,15 +2,20 @@ SYUI
 ===========================
 兼容全端的UI组件库项目
 
-**使用方法**
+### 使用方法
 
-1、拉取仓库代码到本地<br>
+1、拉取仓库代码到本地
+
 2、使用命令行运行`npm i`命令安装依赖
-3、使用HBuilder X导入项目（文件-导入-从本地目录导入）<br>
-4、使用HBuilder X运行项目（运行-选择需要运行的平台）<br>
-5、使用HBuilder X发布项目（运行-选择需要发布的平台）<br>
 
-**目录示例**
+3、使用HBuilder X导入项目（文件-导入-从本地目录导入）
+
+4、使用HBuilder X运行项目（运行-选择需要运行的平台）
+
+5、使用HBuilder X发布项目（运行-选择需要发布的平台）
+
+
+### 目录示例
 
 ```json
 ┌─api                     api接口
@@ -45,11 +50,10 @@ SYUI
 └─uni.scss                全局css变量
 
 ```
-**组件列表**
+### 组件列表
 
 |组件名|组件说明|
 |---|---|
-|xxx|[xxx](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/xxx/README.md)|
 |sy-action-sheet|[底部操作菜单](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-action-sheet/README.md)|
 |sy-button|[按钮](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-button/README.md)|
 |sy-button-group|[按钮组](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-button-group/README.md)|
@@ -88,4 +92,87 @@ SYUI
 |sy-tree|[树形控件](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-tree/README.md)|
 |sy-upload|[文件上传](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-upload/README.md)|
 |sy-upload-card|[文件上传卡片样式](https://github.com/i-yxs/sy-ui/tree/main/components/sy-ui/components/sy-upload-card/README.md)|
+
+### uni.scss
+> uniapp特有的全局scss文件，该项目只用于定义全局scss变量，可以根据项目需求自行修改
+```css
+// 主色调
+$APP_COLOR
+$APP_COLOR_ACTIVE
+// 主背景色
+$APP_BACKGROUND
+$APP_BACKGROUND_ACTIVE
+// 成功
+$SUCCESS_COLOR
+$SUCCESS_COLOR_ACTIVE
+// 警告
+$WARNING_COLOR
+$WARNING_COLOR_ACTIVE
+// 危险
+$DANGER_COLOR
+$DANGER_COLOR_ACTIVE
+// 信息
+$INFO_COLOR
+$INFO_COLOR_ACTIVE
+```
+### 日期格式
+
+> ##### 所有格式都支持多位数，值不够位数时补0
+
+|格式|含义|备注|举例|
+|---|---|---|---|
+|YYYY|年|-|2022|
+|M|月|不补0|1|
+|MM|月|-|01|
+|D|日|不补0|1|
+|DD|日|-|01|
+|H|小时|24小时制；不补0|1|
+|HH|小时|24小时制|01|
+|h|小时|12小时制；不补0|1|
+|hh|小时|12小时制|01|
+|m|分钟|不补0|1|
+|s|秒|不补0|1|
+|ss|秒|-|01|
+|S|毫秒|-|-|
+
+### baseData
+> 开发项目时，该项目通常会存在一些稳定的数据（指大部分时间内都不会变动，但是需要从线上服务器请求的数据，比如数据字典、省市区数据等等），这些数据推荐在用户第一次打开页面时，请求并缓存到vuex，不推荐每次需要时就请求一次，这会极大的增加服务器压力。<br>
+> 所以我们在store引入了baseData模块，路径为`store\modules\baseData.js`，用户请求并缓存数据。<br>
+> <br>
+> 通常我们要为某个组件设置配置数据时，需要发送请求->拿到数据->赋值给组件三步操作，但是有了baseData，我们可以把操作缩减到一步。<br>
+> 我们为部分组件的配置项（通常为`options`）增加的String数据类型，可以为它设置baseData内的任意数据属性名（可以使用链式写法），组件内部会自动从baseData获取指定数据。
+
+### 解决方案
+> 由于uniapp及微信小程序底层实现的原因，有很多vue的功能无法正常，比如组件的props不支持v-bind、不支持动态组件component、props传递对象时会被JSON.stringify，导致每传递一次，都会生成该对象全新复制，当传递的数据量比较大时会产生严重的性能问题，同时也导致我们无法传递js函数。所以我们引入的几个解决方案用于解决这些问题。
+
+### 二级props
+> 该解决方案用于解决组件的props不支持v-bind、不支持动态组件component<br>
+> <br>
+> 当需要实现一个类似动态组件的功能时，变通的方法则是利用for循环把所有组件遍历出来，然后根据父组件传入的组件名来显示对应的组件，同时为每个组件手动绑定props。这个方法有个很严重的问题，就是我们需要为所有组件显式的绑定props，但是当某个组件修改了props，我们也得为这个动态组件也修改一次，这样会极大的增加维护成本和错误。<br>
+> <br>
+> 所以我们为部分组件的props下增加一个二级props属性，它接收该组件所有支持的一级props，和直接设置组件一级props是一样的效果，不同的是我们可以传入一个动态对象。
+
+### provideData
+> 该解决方案用于解决组件的props传递对象时会被JSON.stringify<br>
+> <br>
+> 利用vue的provide / inject，我们可以在父组件内为子组件注入任意数据，甚至是父组件的vue实例本身。此时我们拿到了父组件的实例对象，当我们想传递给子组件数据时，只需要为子组件指定属性名称即可，子组件则根据传入的组件名称从父组件实例上获取。<br>
+> <br>
+> 使用方法如下：
+
+在父组件定义provide，"provideComponent"名称不能修改
+
+```js
+provide() {
+    return {
+        provideComponent: this
+    }
+}
+```
+子组件利用inject接收
+
+```js
+inject: ['provideComponent']
+```
+
+同时子组件会为props新增一个provideKey属性，用于父组件指定属性名称，可以使用链式写法，比如`aaa.bbb.ccc`，当provideKey更新时，会把获取的数据赋值给provideData，此时子组件就可以通过this.provideData来访问传递过来的数据了
 
